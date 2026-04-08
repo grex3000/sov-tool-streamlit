@@ -382,28 +382,35 @@ button[data-testid="baseButton-header"] { display: none !important; }
   background: var(--border) !important; color: var(--muted) !important;
 }
 
-/* ─── Secondary buttons ───────────────────────────────── */
-.main .stButton > button[kind="secondary"] {
+/* ─── Secondary buttons (Back, etc.) ─────────────────── */
+/* Exclude download button wrapper so secondary rule never wins over it */
+.main .stButton:not(.stDownloadButton):not([data-testid="stDownloadButton"]) > button[kind="secondary"] {
   background: var(--surface) !important; color: var(--text) !important;
   border: 1px solid var(--border) !important; border-radius: 0 !important;
   font-size: 12px !important; font-weight: 600 !important;
   letter-spacing: 0.08em !important; text-transform: uppercase !important;
   transition: border-color 0.15s !important;
 }
-.main .stButton > button[kind="secondary"]:hover {
+.main .stButton:not(.stDownloadButton):not([data-testid="stDownloadButton"]) > button[kind="secondary"]:hover {
   border-color: var(--text) !important; background: var(--surface) !important;
 }
 
-/* ─── Download button — filled black like RB CTA ─────── */
-.stDownloadButton > button {
+/* ─── Download button — filled black like RB primary CTA ─ */
+/* Uses both class and data-testid selectors for Streamlit version safety */
+.main .stDownloadButton > button,
+.main [data-testid="stDownloadButton"] > button,
+[data-testid="stDownloadButton"] > button {
   background: var(--text) !important; color: #fff !important;
   border: none !important; border-radius: 0 !important;
   font-size: 12px !important; font-weight: 700 !important;
   letter-spacing: 0.1em !important; text-transform: uppercase !important;
   height: 48px !important; padding: 0 24px !important;
   position: relative !important; overflow: hidden !important;
+  transition: none !important; box-shadow: none !important;
 }
-.stDownloadButton > button::after {
+.main .stDownloadButton > button::after,
+.main [data-testid="stDownloadButton"] > button::after,
+[data-testid="stDownloadButton"] > button::after {
   content: '' !important; position: absolute !important;
   bottom: 0 !important; left: 0 !important;
   width: 100% !important; height: 4px !important;
@@ -411,7 +418,9 @@ button[data-testid="baseButton-header"] { display: none !important; }
   transform: translateY(100%) !important;
   transition: transform 0.15s cubic-bezier(0.39,0.575,0.565,1) !important;
 }
-.stDownloadButton > button:hover::after { transform: translateY(0%) !important; }
+.main .stDownloadButton > button:hover::after,
+.main [data-testid="stDownloadButton"] > button:hover::after,
+[data-testid="stDownloadButton"] > button:hover::after { transform: translateY(0%) !important; }
 
 /* ─── Sidebar: + button ───────────────────────────────── */
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
@@ -955,7 +964,7 @@ if stage == "config":
         <div class="sov-empty">
           <div class="sov-empty-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="#0D9488" stroke-width="1.75" stroke-linecap="round">
+                 stroke="#00aac9" stroke-width="1.75" stroke-linecap="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </div>
