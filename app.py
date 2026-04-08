@@ -1054,7 +1054,17 @@ elif stage == "review":
     cfg     = _ss.pending_config
     n_p     = len(prompts)
 
-    model_names = ", ".join(label for _, label in cfg.get("models", []))
+    # Always derive models from the live sidebar selection — not from the
+    # snapshot taken at "Generate Questions" time. The sidebar multiselect
+    # is visible on every stage, so the user may change it before hitting
+    # "Run Scan". Using the live value ensures the scan matches what they see.
+    live_labels  = _ss.get("model_multiselect", [])
+    live_models  = [(mid, label) for mid, label in AVAILABLE_MODELS if label in live_labels]
+    # Fall back to pending_config if session key isn't populated yet
+    if not live_models:
+        live_models = cfg.get("models", [])
+
+    model_names = ", ".join(label for _, label in live_models)
     st.markdown(f"""
     <div class="prompt-review-meta">
       <span class="prompt-count-badge">{n_p} questions</span>
@@ -1079,16 +1089,25 @@ elif stage == "review":
             f'<div style="font-size:12px;color:#71717A;margin-top:4px">'
             f'{len(approved)} questions selected</div>', unsafe_allow_html=True)
 
+    if not live_models:
+        st.markdown(_warning_html(
+            "No models selected",
+            "Select at least one AI model in the sidebar before running the scan.",
+        ), unsafe_allow_html=True)
+
     st.write("")
     col_back, col_run = st.columns([1, 3])
     with col_back:
         if st.button("Back", use_container_width=True):
             _ss.app_stage = "config"; st.rerun()
     with col_run:
-        lbl = (f"Run Scan — {len(approved)} questions × {len(cfg.get('models',[]))} models"
-               if approved else "Add at least one question to continue")
-        if st.button(lbl, type="primary", disabled=not approved,
+        can_run = bool(approved and live_models)
+        lbl = (f"Run Scan — {len(approved)} questions × {len(live_models)} models"
+               if can_run else "Add at least one question and select a model to continue")
+        if st.button(lbl, type="primary", disabled=not can_run,
                      use_container_width=True):
+            # Sync models to whatever is currently selected in the sidebar
+            cfg["models"] = live_models
             _ss.pending_prompts = approved
             _ss.app_stage       = "scanning"
             st.rerun()
