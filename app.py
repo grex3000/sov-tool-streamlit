@@ -355,19 +355,36 @@ button[data-testid="baseButton-header"] { display: none !important; }
 .main [data-baseweb="tag"] { background: var(--accent-light) !important; border-radius: 0 !important; }
 .main [data-baseweb="tag"] span { color: var(--accent-dim) !important; font-size: 12px !important; }
 
-/* ─── Primary button — RB black button style ──────────── */
-/* RB: black bg, white text, uppercase, 48px, letter-spacing, NO border-radius */
-/* RB hover: 4px accent underline slides up from bottom */
-.main .stButton > button[kind="primary"] {
-  background: var(--text) !important; color: #fff !important;
-  border: none !important; border-radius: 0 !important;
-  font-size: 12px !important; font-weight: 700 !important;
-  letter-spacing: 0.1em !important; text-transform: uppercase !important;
-  height: 48px !important; padding: 0 24px !important;
-  position: relative !important; overflow: hidden !important;
-  transition: none !important; box-shadow: none !important;
+/* ════════════════════════════════════════════════════════
+   BUTTONS — target data-testid which beats emotion-css
+   generated class names from Streamlit's primaryColor theme
+   ════════════════════════════════════════════════════════ */
+
+/* ─── Global reset: kill rounding & shadows on every button */
+button[data-testid^="baseButton"] {
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
-.main .stButton > button[kind="primary"]::after {
+
+/* ─── Primary CTA (main area) — black, RB style ──────── */
+.main button[data-testid="baseButton-primary"] {
+  background:       #000000 !important;
+  background-color: #000000 !important;
+  color:            #ffffff !important;
+  border:           none !important;
+  border-radius:    0 !important;
+  font-size:        12px !important;
+  font-weight:      700 !important;
+  letter-spacing:   0.1em !important;
+  text-transform:   uppercase !important;
+  height:           48px !important;
+  padding:          0 24px !important;
+  position:         relative !important;
+  overflow:         hidden !important;
+  transition:       none !important;
+  box-shadow:       none !important;
+}
+.main button[data-testid="baseButton-primary"]::after {
   content: '' !important; position: absolute !important;
   bottom: 0 !important; left: 0 !important;
   width: 100% !important; height: 4px !important;
@@ -375,42 +392,55 @@ button[data-testid="baseButton-header"] { display: none !important; }
   transform: translateY(100%) !important;
   transition: transform 0.15s cubic-bezier(0.39,0.575,0.565,1) !important;
 }
-.main .stButton > button[kind="primary"]:hover::after {
+.main button[data-testid="baseButton-primary"]:hover::after {
   transform: translateY(0%) !important;
 }
-.main .stButton > button[kind="primary"]:disabled {
-  background: var(--border) !important; color: var(--muted) !important;
+.main button[data-testid="baseButton-primary"]:disabled {
+  background:       var(--border) !important;
+  background-color: var(--border) !important;
+  color:            var(--muted) !important;
 }
 
-/* ─── Secondary buttons (Back, etc.) ─────────────────── */
-/* Exclude download button wrapper so secondary rule never wins over it */
-.main .stButton:not(.stDownloadButton):not([data-testid="stDownloadButton"]) > button[kind="secondary"] {
-  background: var(--surface) !important; color: var(--text) !important;
-  border: 1px solid var(--border) !important; border-radius: 0 !important;
-  font-size: 12px !important; font-weight: 600 !important;
-  letter-spacing: 0.08em !important; text-transform: uppercase !important;
-  transition: border-color 0.15s !important;
+/* ─── Secondary (Back / cancel — main area) ──────────── */
+.main [data-testid="stButton"] button[data-testid="baseButton-secondary"] {
+  background:       #ffffff !important;
+  background-color: #ffffff !important;
+  color:            #000000 !important;
+  border:           1px solid var(--border) !important;
+  border-radius:    0 !important;
+  font-size:        12px !important;
+  font-weight:      600 !important;
+  letter-spacing:   0.08em !important;
+  text-transform:   uppercase !important;
+  height:           48px !important;
+  transition:       border-color 0.15s !important;
+  box-shadow:       none !important;
 }
-.main .stButton:not(.stDownloadButton):not([data-testid="stDownloadButton"]) > button[kind="secondary"]:hover {
-  border-color: var(--text) !important; background: var(--surface) !important;
+.main [data-testid="stButton"] button[data-testid="baseButton-secondary"]:hover {
+  border-color: #000000 !important;
+  background:       #ffffff !important;
+  background-color: #ffffff !important;
 }
 
-/* ─── Download button — filled black like RB primary CTA ─ */
-/* Uses both class and data-testid selectors for Streamlit version safety */
-.main .stDownloadButton > button,
-.main [data-testid="stDownloadButton"] > button,
-[data-testid="stDownloadButton"] > button {
-  background: var(--text) !important; color: #fff !important;
-  border: none !important; border-radius: 0 !important;
-  font-size: 12px !important; font-weight: 700 !important;
-  letter-spacing: 0.1em !important; text-transform: uppercase !important;
-  height: 48px !important; padding: 0 24px !important;
-  position: relative !important; overflow: hidden !important;
-  transition: none !important; box-shadow: none !important;
+/* ─── Download button — same black RB style as primary ── */
+[data-testid="stDownloadButton"] button {
+  background:       #000000 !important;
+  background-color: #000000 !important;
+  color:            #ffffff !important;
+  border:           none !important;
+  border-radius:    0 !important;
+  font-size:        12px !important;
+  font-weight:      700 !important;
+  letter-spacing:   0.1em !important;
+  text-transform:   uppercase !important;
+  height:           48px !important;
+  padding:          0 24px !important;
+  position:         relative !important;
+  overflow:         hidden !important;
+  transition:       none !important;
+  box-shadow:       none !important;
 }
-.main .stDownloadButton > button::after,
-.main [data-testid="stDownloadButton"] > button::after,
-[data-testid="stDownloadButton"] > button::after {
+[data-testid="stDownloadButton"] button::after {
   content: '' !important; position: absolute !important;
   bottom: 0 !important; left: 0 !important;
   width: 100% !important; height: 4px !important;
@@ -418,36 +448,53 @@ button[data-testid="baseButton-header"] { display: none !important; }
   transform: translateY(100%) !important;
   transition: transform 0.15s cubic-bezier(0.39,0.575,0.565,1) !important;
 }
-.main .stDownloadButton > button:hover::after,
-.main [data-testid="stDownloadButton"] > button:hover::after,
-[data-testid="stDownloadButton"] > button:hover::after { transform: translateY(0%) !important; }
-
-/* ─── Sidebar: + button ───────────────────────────────── */
-[data-testid="stSidebar"] .stButton > button[kind="primary"] {
-  background: var(--accent) !important; color: #fff !important;
-  border: none !important; border-radius: 0 !important;
-  height: 36px !important; min-height: 36px !important;
-  padding: 0 14px !important; font-size: 18px !important;
-  font-weight: 400 !important; line-height: 1 !important;
-  box-shadow: none !important; transform: none !important;
-  letter-spacing: 0 !important; text-transform: none !important;
-}
-[data-testid="stSidebar"] .stButton > button[kind="primary"]::after { display: none !important; }
-[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-  background: var(--accent-dim) !important;
+[data-testid="stDownloadButton"] button:hover::after {
+  transform: translateY(0%) !important;
 }
 
-/* ─── Sidebar: × remove buttons ───────────────────────── */
-[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-  background: transparent !important; color: var(--sidebar-muted) !important;
-  border: 1px solid var(--sidebar-border) !important; border-radius: 0 !important;
-  height: 36px !important; min-height: 36px !important;
-  padding: 0 10px !important; font-size: 15px !important;
-  font-weight: 400 !important; line-height: 1 !important;
-  letter-spacing: 0 !important; text-transform: none !important;
-  transition: border-color 0.12s, color 0.12s !important;
+/* ─── Sidebar: + add button (cyan) ───────────────────── */
+[data-testid="stSidebar"] button[data-testid="baseButton-primary"] {
+  background:       var(--accent) !important;
+  background-color: var(--accent) !important;
+  color:            #ffffff !important;
+  border:           none !important;
+  border-radius:    0 !important;
+  height:           36px !important;
+  min-height:       36px !important;
+  padding:          0 14px !important;
+  font-size:        18px !important;
+  font-weight:      400 !important;
+  line-height:      1 !important;
+  letter-spacing:   0 !important;
+  text-transform:   none !important;
+  box-shadow:       none !important;
 }
-[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+[data-testid="stSidebar"] button[data-testid="baseButton-primary"]::after {
+  display: none !important;
+}
+[data-testid="stSidebar"] button[data-testid="baseButton-primary"]:hover {
+  background:       var(--accent-dim) !important;
+  background-color: var(--accent-dim) !important;
+}
+
+/* ─── Sidebar: × remove button ───────────────────────── */
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
+  background:       transparent !important;
+  background-color: transparent !important;
+  color:            var(--sidebar-muted) !important;
+  border:           1px solid var(--sidebar-border) !important;
+  border-radius:    0 !important;
+  height:           36px !important;
+  min-height:       36px !important;
+  padding:          0 10px !important;
+  font-size:        15px !important;
+  font-weight:      400 !important;
+  line-height:      1 !important;
+  letter-spacing:   0 !important;
+  text-transform:   none !important;
+  transition:       border-color 0.12s, color 0.12s !important;
+}
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
   border-color: var(--accent) !important; color: var(--accent) !important;
 }
 
