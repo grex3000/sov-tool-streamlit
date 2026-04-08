@@ -2,17 +2,12 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import pathlib
 import sys
 import threading
-import urllib.error
-import urllib.parse
-import urllib.request
 from datetime import date
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
@@ -59,60 +54,6 @@ def _run_async_polling(coro, on_tick=None, interval: float = 0.35):
     if exc[0]: raise exc[0]
     return result[0]
 
-# ── Report iframe helper ──────────────────────────────────────────────────────
-
-def _auto_height_report(html: str) -> str:
-    """Inject a postMessage script so Streamlit resizes the iframe to content height,
-    eliminating the inner scroll — the page itself becomes the only scrollbar."""
-    script = (
-        "<script>"
-        "(function(){"
-        "function send(){"
-        "var h=Math.max("
-        "document.body?document.body.scrollHeight:0,"
-        "document.documentElement?document.documentElement.scrollHeight:0"
-        ")+32;"  # 32px safety margin
-        "window.parent.postMessage("
-        "{isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:h}"
-        ",'*');"
-        "}"
-        "if(document.readyState==='loading'){"
-        "document.addEventListener('DOMContentLoaded',function(){send();setTimeout(send,600);});"
-        "}else{send();setTimeout(send,600);}"
-        "})();"
-        "</script>"
-    )
-    if "</body>" in html:
-        return html.replace("</body>", script + "</body>", 1)
-    return html + script
-
-# ── Share helper ──────────────────────────────────────────────────────────────
-
-def _upload_gist(html: str, filename: str, token: str) -> str:
-    """Upload HTML as a secret GitHub Gist. Returns an htmlpreview.github.io URL."""
-    body = json.dumps({
-        "description": "AI Share of Voice Report",
-        "public": False,
-        "files": {filename: {"content": html}},
-    }).encode()
-    req = urllib.request.Request(
-        "https://api.github.com/gists",
-        data=body,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Content-Type": "application/json",
-            "User-Agent": "sov-scanner/1.0",
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read().decode())
-    owner   = data["owner"]["login"]
-    gist_id = data["id"]
-    raw     = f"https://gist.githubusercontent.com/{owner}/{gist_id}/raw/{filename}"
-    return f"https://htmlpreview.github.io/?{urllib.parse.quote(raw, safe=':/')}"
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -414,15 +355,6 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 }
 .prompt-review-hint { font-size: 12px; color: var(--muted); }
 
-/* ─── Share URL box ───────────────────────────────────── */
-.share-url-box {
-  background: var(--accent-light); border: 1px solid #99F6E4;
-  border-radius: 10px; padding: 14px 16px; margin-top: 8px;
-}
-.share-url-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--accent-dim); margin-bottom: 6px;
-}
 
 /* ─── Report section ──────────────────────────────────── */
 .report-meta { flex: 1; }
@@ -497,7 +429,6 @@ _init = {
     "app_stage":        "config",
     "report_html":      None,
     "report_path":      None,
-    "report_share_url": None,
     "pending_prompts":  [],
     "pending_config":   {},
     "prompt_ver":       0,
@@ -684,7 +615,6 @@ st.markdown("""
 # ── Stage routing ─────────────────────────────────────────────────────────────
 
 stage = _ss.app_stage
-github_token = st.secrets.get("GITHUB_TOKEN", "")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # STAGE: config
@@ -776,63 +706,23 @@ if stage == "config":
         st.markdown('<hr style="margin:2rem 0">', unsafe_allow_html=True)
         report_name = pathlib.Path(_ss.report_path).name
 
-        # Meta row
         st.markdown(f"""
         <div class="report-meta">
-          <div class="report-meta-title">Latest Report</div>
+          <div class="report-meta-title">Scan complete</div>
           <div class="report-meta-file">{report_name}</div>
         </div>""", unsafe_allow_html=True)
 
-        # Button row — equal columns, stack gracefully on mobile
-        col_dl, col_share, col_new = st.columns(3)
+        st.write("")
+        col_dl, col_new = st.columns(2)
         with col_dl:
             st.download_button("Download Report", data=_ss.report_html,
                                file_name=report_name, mime="text/html",
                                use_container_width=True)
-        with col_share:
-            if github_token:
-                share_label    = "Shared" if _ss.report_share_url else "Share Link"
-                share_disabled = bool(_ss.report_share_url)
-                if st.button(share_label, disabled=share_disabled,
-                             use_container_width=True):
-                    with st.spinner("Publishing report…"):
-                        try:
-                            url = _upload_gist(_ss.report_html, report_name, github_token)
-                            _ss.report_share_url = url
-                            st.rerun()
-                        except Exception as exc:
-                            st.error(f"Could not share: {exc}")
-            else:
-                st.markdown(
-                    '<div style="font-size:11px;color:#71717A;padding-top:10px">'
-                    'Add GITHUB_TOKEN to secrets to enable sharing.</div>',
-                    unsafe_allow_html=True,
-                )
         with col_new:
             if st.button("New Scan", use_container_width=True):
-                _ss.report_html      = None
-                _ss.report_path      = None
-                _ss.report_share_url = None
+                _ss.report_html = None
+                _ss.report_path = None
                 st.rerun()
-
-        # Share URL
-        if _ss.report_share_url:
-            st.markdown("""
-            <div class="share-url-box">
-              <div class="share-url-label">Shareable link — copy and send to anyone</div>
-            </div>""", unsafe_allow_html=True)
-            st.code(_ss.report_share_url, language=None)
-            st.markdown(
-                '<div style="font-size:11px;color:#71717A;margin-top:4px">'
-                'This is a private link hosted on GitHub Gist. '
-                'Anyone with this URL can view the report.</div>',
-                unsafe_allow_html=True,
-            )
-
-        st.write("")
-        # Auto-height: injected script sends content height via postMessage so
-        # the iframe expands to full report height — no inner scroll, page scrolls naturally.
-        components.html(_auto_height_report(_ss.report_html), height=800, scrolling=False)
 
     elif can_generate:
         st.markdown("""
@@ -990,7 +880,6 @@ elif stage == "scanning":
             )
             _ss.report_html      = pathlib.Path(report_path).read_text(encoding="utf-8")
             _ss.report_path      = report_path
-            _ss.report_share_url = None  # clear any old share URL
             _prog(1.0, "Scan complete")
             status.update(label="Scan complete", state="complete")
 
