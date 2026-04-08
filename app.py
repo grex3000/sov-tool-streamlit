@@ -672,10 +672,11 @@ with st.sidebar:
     api_key = st.secrets.get("OPENROUTER_API_KEY", "")
     if api_key:
         st.markdown("""
-        <div style="display:flex;align-items:center;gap:8px;background:#CCFBF1;
-             border:1px solid #99F6E4;border-radius:8px;padding:10px 12px;margin-bottom:1rem">
-          <div style="width:6px;height:6px;border-radius:50%;background:#0D9488;flex-shrink:0"></div>
-          <span style="font-size:12px;font-weight:500;color:#0F766E">API key active</span>
+        <div style="display:flex;align-items:center;gap:8px;
+             border-left:3px solid #00aac9;padding:8px 12px;margin-bottom:1rem">
+          <div style="width:5px;height:5px;background:#00aac9;flex-shrink:0"></div>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.1em;
+                       text-transform:uppercase;color:#8d9399;">API key active</span>
         </div>""", unsafe_allow_html=True)
     else:
         st.markdown(
@@ -718,21 +719,29 @@ with st.sidebar:
     st.markdown('<hr style="margin:1.25rem 0">', unsafe_allow_html=True)
 
     # Competitors ──────────────────────────────────────────────────────────────
+    _MAX_COMPETITORS = 3
     st.markdown(
         '<span class="sov-label">Competitors</span>'
-        '<span class="sov-hint">Companies to benchmark your visibility against.</span>',
+        '<span class="sov-hint">Up to 3 companies to benchmark your visibility against.</span>',
         unsafe_allow_html=True,
     )
     for i, comp in enumerate(_ss.competitors):
         cc, cd = st.columns([5, 1])
         with cc: st.markdown(f'<div class="comp-tag">{comp}</div>', unsafe_allow_html=True)
         with cd: st.button("×", key=f"rm_{i}", on_click=_remove_comp, args=(i,))
-    ce, cf = st.columns([5, 1])
-    with ce:
-        st.text_input("comp_in", key=f"nc_{_ss.comp_input_key}",
-                      label_visibility="collapsed", placeholder="Add competitor…")
-    with cf:
-        st.button("+", key="add_comp", on_click=_add_comp, type="primary")
+    if len(_ss.competitors) < _MAX_COMPETITORS:
+        ce, cf = st.columns([5, 1])
+        with ce:
+            st.text_input("comp_in", key=f"nc_{_ss.comp_input_key}",
+                          label_visibility="collapsed", placeholder="Add competitor…")
+        with cf:
+            st.button("+", key="add_comp", on_click=_add_comp, type="primary")
+    else:
+        st.markdown(
+            '<span style="font-size:11px;color:#555;display:block;margin-top:4px;">'
+            'Maximum of 3 competitors reached.</span>',
+            unsafe_allow_html=True,
+        )
 
     st.markdown('<hr style="margin:1.25rem 0">', unsafe_allow_html=True)
 
