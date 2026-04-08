@@ -860,15 +860,9 @@ with st.sidebar:
         style="color:#0D9488;text-decoration:none">OpenRouter</a>.
         Reports saved locally.
       </div>
-    </div>""", unsafe_allow_html=True)
-
-    # Watermark — fixed to bottom-left of sidebar
-    st.markdown("""
-    <div style="position:fixed;bottom:16px;left:0;width:var(--sidebar-width,21rem);
-                text-align:center;font-size:9px;font-weight:600;
-                letter-spacing:0.14em;text-transform:uppercase;
-                color:#3a3a3a;pointer-events:none;z-index:99999;">
-      developed by gregor.weindorf
+      <div style="font-size:9px;color:#555;letter-spacing:0.14em;text-transform:uppercase;margin-top:10px;">
+        developed by gregor.weindorf
+      </div>
     </div>""", unsafe_allow_html=True)
 
 # ── Step indicator ────────────────────────────────────────────────────────────
