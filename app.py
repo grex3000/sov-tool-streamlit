@@ -110,10 +110,47 @@ st.set_page_config(
 # ── CSS ────────────────────────────────────────────────────────────────────────
 
 st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
+/* ── RBDesign typeface — loaded directly from rolandberger.com CDN ── */
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-Light.otf') format('opentype');
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-LightItalic.otf') format('opentype');
+  font-weight: 300; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-Regular.otf') format('opentype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-Medium.otf') format('opentype');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-Semibold.otf') format('opentype');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-Bold.otf') format('opentype');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'RBDesign';
+  src: url('https://www.rolandberger.com/fonts/RBDesign/RBDesign-BoldItalic.otf') format('opentype');
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+
+/* IBM Plex Mono for numeric data */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 /* ── Roland Berger design tokens (from rolandberger.com bundle.css) ── */
 :root {
   --accent:       #00aac9;   /* RB primary cyan — most-used accent */
@@ -132,8 +169,8 @@ st.markdown("""
 
 html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !important; }
 
-/* Barlow — closest free match to RBDesign (geometric grotesque, Light body / Bold UI) */
-* { font-family: 'Barlow', Arial, sans-serif !important; }
+/* RBDesign — proprietary Roland Berger typeface */
+* { font-family: 'RBDesign', Arial, sans-serif !important; }
 
 /* ── Restore Streamlit icon fonts ── */
 .material-symbols-rounded,
@@ -393,11 +430,9 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 .sov-logo-bar {
   display: flex; align-items: center; gap: 0; margin-bottom: 24px;
 }
-.sov-logo-name {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--text);
-  padding-right: 14px; border-right: 1px solid var(--border);
-  margin-right: 14px; line-height: 1;
+.sov-logo-bar img {
+  border-right: 1px solid var(--border);
+  padding-right: 14px;
 }
 .sov-logo-product {
   font-size: 11px; font-weight: 300; letter-spacing: 0.12em;
@@ -551,9 +586,13 @@ def _add_alias():
 
 with st.sidebar:
     st.markdown("""
-    <div style="margin-bottom:1.5rem">
-      <div style="font-size:13px;font-weight:700;letter-spacing:-0.02em;color:#18181B">SOV Scanner</div>
-      <div style="font-size:12px;color:#71717A;margin-top:2px">Configuration</div>
+    <div style="padding:0 0 20px;border-bottom:1px solid #2a2a2a;margin-bottom:20px;">
+      <img src="https://www.rolandberger.com/img/assets/RoBe_Logotype_White_Digital.png"
+           alt="Roland Berger"
+           style="height:16px;display:block;margin-bottom:10px;">
+      <div style="font-size:9px;color:#666;letter-spacing:0.16em;text-transform:uppercase;font-family:'RBDesign',Arial,sans-serif;font-weight:600;">
+        AI Share of Voice
+      </div>
     </div>""", unsafe_allow_html=True)
 
     # API key ──────────────────────────────────────────────────────────────────
@@ -695,7 +734,9 @@ def _step_indicator(active: int):
 st.markdown("""
 <div class="sov-header">
   <div class="sov-logo-bar">
-    <span class="sov-logo-name">Roland Berger</span>
+    <img src="https://www.rolandberger.com/img/assets/RoBe_Logotype_Black_Digital.png"
+         alt="Roland Berger"
+         style="height:14px;display:block;margin-right:14px;">
     <span class="sov-logo-product">AI Share of Voice</span>
   </div>
   <div class="sov-badge">Live Intelligence</div>
