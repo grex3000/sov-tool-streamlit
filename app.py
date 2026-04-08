@@ -98,6 +98,79 @@ _DEFAULT_ALIASES     = ["Roland Berger Strategy Consultants"]
 def _auto_period() -> str:
     d = date.today(); return f"Q{(d.month-1)//3+1} {d.year}"
 
+
+# ── Error helpers ─────────────────────────────────────────────────────────────
+
+def _classify_error(err: str) -> tuple[str, str]:
+    """
+    Turn a raw exception string into (short_label, user_guidance).
+    Returns a tuple suitable for display in st.error / st.warning.
+    """
+    e = err.lower()
+    if "401" in e or "authentication" in e or "invalid api key" in e or "unauthorized" in e:
+        return (
+            "Authentication failed",
+            "Your OpenRouter API key was rejected. Check that the key is correct and hasn't expired. "
+            "You can generate a new key at openrouter.ai/keys.",
+        )
+    if "402" in e or "insufficient" in e or "credit" in e or "balance" in e:
+        return (
+            "Insufficient credits",
+            "Your OpenRouter account has run out of credits. Top up at openrouter.ai/credits.",
+        )
+    if "403" in e or "forbidden" in e or "not allowed" in e:
+        return (
+            "Access denied",
+            "Your API key doesn't have permission to use this model. Some models require a paid plan.",
+        )
+    if "404" in e or "not found" in e or "no such model" in e:
+        return (
+            "Model not found",
+            "This model ID isn't available on OpenRouter. It may have been renamed or removed. "
+            "Check openrouter.ai/models for the current list.",
+        )
+    if "429" in e or "rate limit" in e or "too many requests" in e:
+        return (
+            "Rate limited",
+            "Too many requests sent too quickly. Try reducing the number of questions or models, "
+            "or wait a moment before retrying.",
+        )
+    if "timeout" in e or "timed out" in e or "read timeout" in e:
+        return (
+            "Request timed out",
+            "The model took too long to respond (>90 s). This can happen with large thinking models. "
+            "Try Gemini 2.5 Flash or GPT-4o instead.",
+        )
+    if "connection" in e or "network" in e or "name or service not known" in e or "ssl" in e:
+        return (
+            "Network error",
+            "Could not reach the OpenRouter API. Check your internet connection and try again.",
+        )
+    if "context" in e or "token" in e and "limit" in e:
+        return (
+            "Context limit exceeded",
+            "The prompt is too long for this model. Reduce the number of questions per model.",
+        )
+    return ("Unexpected error", err[:300])
+
+
+def _error_html(label: str, detail: str) -> str:
+    return f"""
+    <div style="border:1px solid #fca5a5;background:#fef2f2;padding:14px 16px;margin:8px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+                  color:#b91c1c;margin-bottom:6px;">{label}</div>
+      <div style="font-size:13px;color:#7f1d1d;line-height:1.55;">{detail}</div>
+    </div>"""
+
+
+def _warning_html(label: str, detail: str) -> str:
+    return f"""
+    <div style="border:1px solid #fcd34d;background:#fffbeb;padding:14px 16px;margin:8px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+                  color:#92400e;margin-bottom:6px;">{label}</div>
+      <div style="font-size:13px;color:#78350f;line-height:1.55;">{detail}</div>
+    </div>"""
+
 # ── Page config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
@@ -589,7 +662,7 @@ with st.sidebar:
     <div style="padding:0 0 20px;border-bottom:1px solid #2a2a2a;margin-bottom:20px;">
       <img src="https://www.rolandberger.com/img/assets/RoBe_Logotype_White_Digital.png"
            alt="Roland Berger"
-           style="height:16px;display:block;margin-bottom:10px;">
+           style="height:32px;display:block;margin-bottom:10px;">
       <div style="font-size:9px;color:#666;letter-spacing:0.16em;text-transform:uppercase;font-family:'RBDesign',Arial,sans-serif;font-weight:600;">
         AI Share of Voice
       </div>
@@ -736,7 +809,7 @@ st.markdown("""
   <div class="sov-logo-bar">
     <img src="https://www.rolandberger.com/img/assets/RoBe_Logotype_White_Digital.png"
          alt="Roland Berger"
-         style="height:14px;display:block;margin-right:14px;filter:brightness(0);">
+         style="height:28px;display:block;margin-right:14px;filter:brightness(0);">
     <span class="sov-logo-product">AI Share of Voice</span>
   </div>
   <div class="sov-badge">Live Intelligence</div>
@@ -815,12 +888,20 @@ if stage == "config":
         n_to_generate  = max(0, num_prompts - len(custom_prompts))
 
         all_names = [target_name] + list(_ss.aliases) + list(_ss.competitors)
-        with st.spinner(f"Generating {n_to_generate} questions for '{topic}'…"):
-            generated = _run_async(auto_generate_prompts(
-                topic=topic, count=n_to_generate, api_key=api_key,
-                brief=focus_brief, examples=custom_prompts or None,
-                exclude_names=all_names,
-            )) if n_to_generate > 0 else []
+        try:
+            with st.spinner(f"Generating {n_to_generate} questions for '{topic}'…"):
+                generated = _run_async(auto_generate_prompts(
+                    topic=topic, count=n_to_generate, api_key=api_key,
+                    brief=focus_brief, examples=custom_prompts or None,
+                    exclude_names=all_names,
+                )) if n_to_generate > 0 else []
+        except Exception as _gen_exc:
+            _lbl, _detail = _classify_error(str(_gen_exc))
+            st.markdown(_error_html(
+                f"Question generation failed — {_lbl}",
+                _detail,
+            ), unsafe_allow_html=True)
+            st.stop()
 
         _ss.pending_prompts = list(dict.fromkeys(custom_prompts + generated))
         _ss.pending_config  = {
@@ -978,31 +1059,75 @@ elif stage == "scanning":
                 interval=0.35,
             )
 
-            # Per-model error breakdown
-            from collections import Counter as _Counter
-            model_errors = _Counter(r.model_label for r in results if r.error)
-            ok_count     = sum(1 for r in results if not r.error)
+            # ── Response quality checks ───────────────────────────────────────
+            from collections import Counter as _Counter, defaultdict as _defaultdict
+
+            ok_count      = sum(1 for r in results if not r.error)
+            error_results = [r for r in results if r.error]
+            empty_results = [r for r in results if not r.error and not r.response]
 
             query_status.write(f"**{ok_count} / {real_total} responses received**")
-            if model_errors:
-                for model_label, n_err in sorted(model_errors.items()):
-                    st.warning(
-                        f"**{model_label}** — {n_err} / {len(prompt_list)} requests failed. "
-                        f"The model ID may be unavailable on OpenRouter."
-                    )
+
+            # Group errors by model and by error class so each model gets one
+            # clear explanation rather than N identical warnings.
+            if error_results:
+                by_model: dict = _defaultdict(list)
+                for r in error_results:
+                    by_model[r.model_label].append(r.error or "")
+                for model_label, errs in sorted(by_model.items()):
+                    # Pick the most representative error for this model
+                    sample = errs[0]
+                    lbl, detail = _classify_error(sample)
+                    st.markdown(_warning_html(
+                        f"{model_label} — {len(errs)}/{len(prompt_list)} requests failed · {lbl}",
+                        detail,
+                    ), unsafe_allow_html=True)
+
+            # Warn about models that responded but returned empty content
+            if empty_results:
+                empty_models = sorted({r.model_label for r in empty_results})
+                st.markdown(_warning_html(
+                    "Empty responses received",
+                    f"{', '.join(empty_models)} returned responses with no text content. "
+                    "This can happen with thinking/reasoning models whose answer appears in a "
+                    "separate field. Try switching to a non-thinking variant (e.g. Gemini 2.5 Flash).",
+                ), unsafe_allow_html=True)
+
+            if ok_count == 0:
+                st.markdown(_error_html(
+                    "All requests failed",
+                    "No model returned a usable response. Check your API key and model selection, "
+                    "then try again.",
+                ), unsafe_allow_html=True)
+                st.stop()
+
             _prog(0.75, f"{ok_count}/{real_total} responses — detecting mentions…")
 
             st.write("Detecting brand mentions…")
             run_id = insert_run(DB_PATH, topic=topic_run, period=_auto_period())
+            total_mentions = 0
             for r in results:
                 qid = insert_query(DB_PATH, run_id=run_id,
                                    model_id=r.model_id, model_label=r.model_label,
                                    prompt=r.prompt, response=r.response)
                 if r.response:
-                    for hit in detect_all_mentions(r.response, company_refs):
+                    hits = detect_all_mentions(r.response, company_refs)
+                    total_mentions += len(hits)
+                    for hit in hits:
                         insert_mention(DB_PATH, query_id=qid,
                                        company_name=hit["company_name"], is_target=hit["is_target"],
                                        match_type=hit["type"], excerpt=hit["excerpt"])
+
+            if total_mentions == 0:
+                st.markdown(_warning_html(
+                    "No brand mentions detected",
+                    f"None of the {ok_count} responses contained '{cfg['target_name']}' or any "
+                    f"competitor name. This usually means: (1) the topic or questions are too broad "
+                    f"and AI models answered generically without naming companies, or (2) the company "
+                    f"names / aliases in the sidebar don't match how AI models refer to them. "
+                    f"Try adding aliases or refining the topic.",
+                ), unsafe_allow_html=True)
+
             _prog(0.88, "Mentions detected — building report…")
 
             st.write("Generating report…")
@@ -1020,8 +1145,11 @@ elif stage == "scanning":
             status.update(label="Scan complete", state="complete")
 
     except Exception as exc:
-        st.error(f"Scan failed: {exc}")
-        if st.button("Back to Configuration"):
+        _lbl, _detail = _classify_error(str(exc))
+        st.markdown(_error_html(f"Scan failed — {_lbl}", _detail), unsafe_allow_html=True)
+        with st.expander("Technical details"):
+            st.code(str(exc), language=None)
+        if st.button("Back to Configuration", type="primary"):
             _ss.app_stage = "config"; st.rerun()
     else:
         _ss.app_stage = "config"
