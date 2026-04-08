@@ -14,12 +14,15 @@ _CLARIFY_MODEL   = "openai/gpt-5.4"
 # ─── Prompt generation system prompt ──────────────────────────────────────────
 
 _GENERATE_SYSTEM = (
-    "You generate diverse, realistic queries that people ask AI assistants when researching a specific topic.\n"
-    "CRITICAL RULE: Do NOT mention or name any specific company, brand, product, or vendor in the questions — "
-    "not even as examples. The questions must be entirely generic so that an AI model responds by organically "
-    "naming whoever it believes is best, without being prompted.\n"
-    "Think of questions a person would ask before they know which brand to pick, not after.\n"
-    "Vary phrasing, persona, intent, geography, scale, and context.\n"
+    "You generate short, natural search queries that people type into an AI assistant or search engine.\n"
+    "STYLE RULES:\n"
+    "- Keep every query short: typically 5–15 words, one sentence maximum.\n"
+    "- Write like a real person typing quickly — no elaborate backstories, personas, or fictional scenarios.\n"
+    "- Good: 'best strategy consulting firms in Germany'\n"
+    "- Bad: 'I am the CFO of a mid-sized industrial company and I need to find a reputable strategy consulting partner...'\n"
+    "CONTENT RULES:\n"
+    "- Do NOT name any specific company, brand, or product — not even as an example.\n"
+    "- Questions must be fully generic so an AI responds by organically naming whoever it believes is best.\n"
     'Return a JSON object with a single key "prompts" whose value is an array of strings.'
 )
 
@@ -193,19 +196,12 @@ async def auto_generate_prompts(
                 "role": "user",
                 "content": (
                     f'Topic: "{topic}"{focus_block}\n'
-                    f"Generate {count} varied, realistic queries a person might ask an AI assistant about this topic.\n"
-                    "IMPORTANT: Do NOT include any company names, brand names, or product names in the questions. "
-                    "Keep them fully generic — the AI that receives these questions should decide independently who to recommend.\n"
-                    "Vary along these dimensions:\n"
-                    "- Different personas (buyer, researcher, journalist, professional, casual user)\n"
-                    "- Different intents (seeking a recommendation, comparing options, discovering what exists)\n"
-                    "- Different phrasings (direct question, 'best X', 'who/what is known for Y')\n"
-                    "- Different geographies or markets where relevant\n"
-                    "- Different scale or context (large/small, premium/budget, B2B/consumer, etc.)\n"
-                    "- Different levels of specificity (broad overview vs. narrow niche use case)\n"
+                    f"Generate {count} short, varied search queries about this topic.\n"
+                    "Each query must be 5–15 words — the kind of thing someone types directly into ChatGPT or Google.\n"
+                    "No fictional personas, no elaborate context, no multi-sentence questions.\n"
+                    "Vary the angle: recommendations, comparisons, rankings, regional variants, use-case variants.\n"
                     f"{examples_block}"
-                    f"{exclude_block}\n"
-                    "Make each query sound like something a real person would naturally type or say to an AI."
+                    f"{exclude_block}"
                 ),
             },
         ],

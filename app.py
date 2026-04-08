@@ -448,7 +448,7 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 [data-testid="stMetricValue"] { font-family: 'JetBrains Mono', monospace !important; }
 
 .sov-watermark {
-  position: fixed; bottom: 18px; right: 22px; font-size: 11px;
+  position: fixed; bottom: 18px; left: 22px; font-size: 11px;
   font-weight: 500; color: var(--muted); letter-spacing: 0.03em;
   opacity: 0.55; z-index: 9999; pointer-events: none;
   font-family: 'JetBrains Mono', monospace !important;
