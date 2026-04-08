@@ -109,6 +109,8 @@
       letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
       border-bottom: 2px solid var(--border); white-space: nowrap;
     }
+    /* Model name columns must NOT be uppercased — "4o" ≠ "4O" */
+    .matrix-table th[data-model-id] { text-transform: none; letter-spacing: .04em; }
     .matrix-table th.center { text-align: center; }
     .matrix-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     .matrix-table tbody tr:last-child td { border-bottom: none; }
@@ -160,7 +162,7 @@
     }
     .citation-card:hover { box-shadow: 0 4px 24px -8px rgba(0,0,0,.08); }
     .citation-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-    .model-pill { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: var(--accent-light); color: var(--accent-dim); padding: 4px 10px; border-radius: 100px; }
+    .model-pill { font-size: 11px; font-weight: 600; letter-spacing: .03em; background: var(--accent-light); color: var(--accent-dim); padding: 4px 10px; border-radius: 100px; }
     .topic-pill { font-size: 11px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 4px 10px; border-radius: 100px; }
     .cit-date   { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
     .cit-label  { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
@@ -270,8 +272,8 @@
     }
     .response-model-card:last-child { border-right: none; }
     .response-model-header {
-      font-size: 11px; font-weight: 600; letter-spacing: .07em;
-      text-transform: uppercase; color: var(--muted);
+      font-size: 11px; font-weight: 600; letter-spacing: .04em;
+      color: var(--muted);
       display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
       margin-bottom: 12px;
     }
