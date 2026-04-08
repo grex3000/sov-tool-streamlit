@@ -83,7 +83,7 @@ AVAILABLE_MODELS: list[tuple[str, str]] = [
 _DEFAULT_MODEL_IDS = [
     "openai/gpt-4o",
     "anthropic/claude-sonnet-4.6",
-    "google/gemini-2.5-pro-preview",
+    "google/gemini-2.5-flash",
     "perplexity/sonar-pro",
 ]
 _LABEL_TO_ID = {label: mid for mid, label in AVAILABLE_MODELS}
@@ -734,9 +734,9 @@ def _step_indicator(active: int):
 st.markdown("""
 <div class="sov-header">
   <div class="sov-logo-bar">
-    <img src="https://www.rolandberger.com/img/assets/RoBe_Logotype_Black_Digital.png"
+    <img src="https://www.rolandberger.com/img/assets/RoBe_Logotype_White_Digital.png"
          alt="Roland Berger"
-         style="height:14px;display:block;margin-right:14px;">
+         style="height:14px;display:block;margin-right:14px;filter:brightness(0);">
     <span class="sov-logo-product">AI Share of Voice</span>
   </div>
   <div class="sov-badge">Live Intelligence</div>
@@ -855,7 +855,7 @@ if stage == "config":
                                file_name=report_name, mime="text/html",
                                use_container_width=True)
         with col_new:
-            if st.button("New Scan", use_container_width=True):
+            if st.button("New Scan", type="primary", use_container_width=True):
                 _ss.report_html = None
                 _ss.report_path = None
                 st.rerun()

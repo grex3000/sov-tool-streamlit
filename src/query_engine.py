@@ -45,12 +45,16 @@ async def _query_one(
             resp = await client.chat.completions.create(
                 model=model_id,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=900,
-                timeout=45,
+                max_tokens=1500,
+                timeout=90,
             )
+            # Gemini thinking models may return None content with reasoning in a
+            # separate field — fall back to empty string so we at least store the
+            # query without crashing; the per-model error counter handles the 0%.
+            content = resp.choices[0].message.content
             return QueryResult(
                 model_id=model_id, model_label=model_label,
-                prompt=prompt, response=resp.choices[0].message.content or "",
+                prompt=prompt, response=content if content else "",
             )
         except Exception as exc:
             return QueryResult(
