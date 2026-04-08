@@ -102,7 +102,7 @@ def _auto_period() -> str:
 
 st.set_page_config(
     page_title="AI Share of Voice",
-    page_icon="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23C8102E'/><text x='50' y='68' font-size='58' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='white'>B</text></svg>",
+    page_icon="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text x='50' y='68' font-size='58' font-family='Arial,sans-serif' font-weight='700' text-anchor='middle' fill='%2300aac9'>B</text></svg>",
     layout="wide",
 )
 
@@ -110,28 +110,29 @@ st.set_page_config(
 
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+/* ── Roland Berger design tokens (from rolandberger.com bundle.css) ── */
 :root {
-  --accent:       #C8102E;
-  --accent-light: #FEF0F2;
-  --accent-dim:   #A50D25;
-  --bg:           #F5F5F5;
-  --surface:      #FFFFFF;
-  --text:         #0A0A0A;
-  --muted:        #767676;
-  --border:       #E0E0E0;
-  --sidebar-bg:   #111111;
-  --sidebar-text: #F0F0F0;
-  --sidebar-muted:#909090;
-  --sidebar-border:#2A2A2A;
+  --accent:       #00aac9;   /* RB primary cyan — most-used accent */
+  --accent-light: #e3f6fc;
+  --accent-dim:   #0092ae;
+  --bg:           #eff0f1;   /* RB actual page background */
+  --surface:      #ffffff;
+  --text:         #000000;   /* pure black — RB body color */
+  --muted:        #8d9399;   /* RB gray */
+  --border:       #dee0e3;   /* RB border color */
+  --sidebar-bg:   #000000;   /* RB header = black */
+  --sidebar-text: #ffffff;
+  --sidebar-muted:#a0a0a0;
+  --sidebar-border:#2a2a2a;
 }
 
 html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !important; }
 
-/* Apply DM Sans broadly but restore icon fonts below */
-* { font-family: 'DM Sans', system-ui, sans-serif !important; }
+/* Barlow — closest free match to RBDesign (geometric grotesque, Light body / Bold UI) */
+* { font-family: 'Barlow', Arial, sans-serif !important; }
 
 /* ── Restore Streamlit icon fonts ── */
 .material-symbols-rounded,
@@ -146,14 +147,13 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
 #MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
 
-/* ─── Sidebar — dark, Roland Berger nav style ──────────── */
+/* ─── Sidebar — black, like RB's fixed header nav ──────── */
 [data-testid="stSidebar"] {
   background: var(--sidebar-bg) !important;
   border-right: none !important;
 }
 [data-testid="stSidebar"] > div:first-child { padding: 2rem 1.25rem !important; }
 
-/* Sidebar text overrides */
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] span,
 [data-testid="stSidebar"] label,
@@ -161,174 +161,181 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
 
 [data-testid="stSidebar"] [data-testid="stTextInput"] input,
 [data-testid="stSidebar"] [data-testid="stTextArea"] textarea {
-  background: #1A1A1A !important;
+  background: #1a1a1a !important;
   border: 1px solid var(--sidebar-border) !important;
+  border-radius: 0 !important;
   color: var(--sidebar-text) !important;
-  border-radius: 4px !important;
+  font-size: 14px !important;
 }
 [data-testid="stSidebar"] [data-testid="stTextInput"] input:focus,
 [data-testid="stSidebar"] [data-testid="stTextArea"] textarea:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(200,16,46,0.20) !important;
-  outline: none !important;
+  box-shadow: none !important; outline: none !important;
 }
 [data-testid="stSidebar"] [data-testid="stTextInput"] label,
 [data-testid="stSidebar"] [data-testid="stTextArea"] label,
 [data-testid="stSidebar"] [data-testid="stSlider"] label {
   color: var(--sidebar-muted) !important;
-  font-size: 11px !important; font-weight: 600 !important;
-  letter-spacing: 0.08em !important; text-transform: uppercase !important;
+  font-size: 10px !important; font-weight: 600 !important;
+  letter-spacing: 0.12em !important; text-transform: uppercase !important;
 }
 
-/* Sidebar multiselect */
 [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-  background: #1A1A1A !important;
+  background: #1a1a1a !important;
   border: 1px solid var(--sidebar-border) !important;
-  border-radius: 4px !important; color: var(--sidebar-text) !important;
+  border-radius: 0 !important; color: var(--sidebar-text) !important;
 }
 [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div:focus-within {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(200,16,46,0.20) !important;
+  border-color: var(--accent) !important; box-shadow: none !important;
 }
 [data-testid="stSidebar"] [data-baseweb="tag"] {
-  background: rgba(200,16,46,0.18) !important; border-radius: 2px !important;
+  background: rgba(0,170,201,0.2) !important; border-radius: 0 !important;
 }
-[data-testid="stSidebar"] [data-baseweb="tag"] span { color: #FF6B82 !important; font-size: 12px !important; }
+[data-testid="stSidebar"] [data-baseweb="tag"] span { color: var(--accent) !important; font-size: 12px !important; }
 
-/* Sidebar slider */
 [data-testid="stSidebar"] [data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
   background: var(--accent) !important; border-color: var(--accent) !important;
 }
 
+/* Sidebar labels */
 .sov-label {
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--sidebar-muted);
-  margin: 1.5rem 0 0.25rem; display: block;
+  margin: 1.5rem 0 0.4rem; display: block;
 }
 .sov-hint {
-  font-size: 11.5px; color: var(--sidebar-muted); line-height: 1.55;
-  margin: 0 0 8px; display: block;
+  font-size: 12px; color: var(--sidebar-muted); line-height: 1.55;
+  margin: 0 0 8px; display: block; font-weight: 300;
 }
 
 /* ─── Main area inputs ────────────────────────────────── */
 .main [data-testid="stTextInput"] input,
 .main [data-testid="stTextArea"] textarea {
   border: 1px solid var(--border) !important;
-  border-radius: 4px !important; font-size: 14px !important;
+  border-radius: 0 !important; font-size: 15px !important; font-weight: 300 !important;
   color: var(--text) !important; background: var(--surface) !important;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  transition: border-color 0.15s !important;
   padding: 10px 12px !important;
 }
 .main [data-testid="stTextInput"] input:focus,
 .main [data-testid="stTextArea"] textarea:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(200,16,46,0.15) !important;
-  outline: none !important;
+  border-color: var(--text) !important; box-shadow: none !important; outline: none !important;
 }
 .main [data-testid="stTextInput"] label,
 .main [data-testid="stTextArea"] label,
 .main [data-testid="stSlider"] label {
-  font-size: 12px !important; font-weight: 500 !important;
-  color: var(--muted) !important; margin-bottom: 4px !important;
+  font-size: 10px !important; font-weight: 600 !important; letter-spacing: 0.12em !important;
+  text-transform: uppercase !important; color: var(--muted) !important; margin-bottom: 6px !important;
 }
 
 /* ─── Main area multiselect ───────────────────────────── */
 .main [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-  border: 1px solid var(--border) !important;
-  border-radius: 4px !important;
-  background: var(--surface) !important;
-  font-size: 13px !important;
+  border: 1px solid var(--border) !important; border-radius: 0 !important;
+  background: var(--surface) !important; font-size: 14px !important; font-weight: 300 !important;
 }
 .main [data-testid="stMultiSelect"] [data-baseweb="select"] > div:focus-within {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px rgba(200,16,46,0.15) !important;
+  border-color: var(--text) !important; box-shadow: none !important;
 }
-.main [data-baseweb="tag"] {
-  background: var(--accent-light) !important;
-  border-radius: 2px !important;
-}
+.main [data-baseweb="tag"] { background: var(--accent-light) !important; border-radius: 0 !important; }
 .main [data-baseweb="tag"] span { color: var(--accent-dim) !important; font-size: 12px !important; }
 
-/* ─── Primary button (main area) ──────────────────────── */
+/* ─── Primary button — RB black button style ──────────── */
+/* RB: black bg, white text, uppercase, 48px, letter-spacing, NO border-radius */
+/* RB hover: 4px accent underline slides up from bottom */
 .main .stButton > button[kind="primary"] {
-  background: var(--accent) !important; color: #fff !important;
-  border: none !important; border-radius: 4px !important;
-  font-size: 14px !important; font-weight: 600 !important;
-  letter-spacing: 0.01em !important; height: 48px !important;
-  transition: background 0.15s, transform 0.1s !important;
-  box-shadow: none !important;
+  background: var(--text) !important; color: #fff !important;
+  border: none !important; border-radius: 0 !important;
+  font-size: 12px !important; font-weight: 700 !important;
+  letter-spacing: 0.1em !important; text-transform: uppercase !important;
+  height: 48px !important; padding: 0 24px !important;
+  position: relative !important; overflow: hidden !important;
+  transition: none !important; box-shadow: none !important;
 }
-.main .stButton > button[kind="primary"]:hover {
-  background: var(--accent-dim) !important;
-  transform: translateY(-1px) !important;
+.main .stButton > button[kind="primary"]::after {
+  content: '' !important; position: absolute !important;
+  bottom: 0 !important; left: 0 !important;
+  width: 100% !important; height: 4px !important;
+  background: var(--accent) !important;
+  transform: translateY(100%) !important;
+  transition: transform 0.15s cubic-bezier(0.39,0.575,0.565,1) !important;
 }
-.main .stButton > button[kind="primary"]:active {
-  transform: scale(0.99) translateY(0) !important;
+.main .stButton > button[kind="primary"]:hover::after {
+  transform: translateY(0%) !important;
 }
 .main .stButton > button[kind="primary"]:disabled {
-  background: #C0C0C0 !important; transform: none !important;
+  background: var(--border) !important; color: var(--muted) !important;
 }
 
-/* ─── Secondary buttons (main area) ──────────────────── */
+/* ─── Secondary buttons ───────────────────────────────── */
 .main .stButton > button[kind="secondary"] {
   background: var(--surface) !important; color: var(--text) !important;
-  border: 1px solid var(--border) !important; border-radius: 4px !important;
-  font-size: 13px !important; font-weight: 500 !important;
-  transition: border-color 0.15s, background 0.15s !important;
+  border: 1px solid var(--border) !important; border-radius: 0 !important;
+  font-size: 12px !important; font-weight: 600 !important;
+  letter-spacing: 0.08em !important; text-transform: uppercase !important;
+  transition: border-color 0.15s !important;
 }
 .main .stButton > button[kind="secondary"]:hover {
-  background: var(--bg) !important; border-color: #A0A0A0 !important;
+  border-color: var(--text) !important; background: var(--surface) !important;
 }
 
-/* ─── Download button ─────────────────────────────────── */
+/* ─── Download button — filled black like RB CTA ─────── */
 .stDownloadButton > button {
-  background: var(--accent) !important; color: #fff !important;
-  border: none !important; border-radius: 4px !important;
-  font-size: 13px !important; font-weight: 600 !important;
-  letter-spacing: 0.01em !important;
-  transition: background 0.15s !important;
+  background: var(--text) !important; color: #fff !important;
+  border: none !important; border-radius: 0 !important;
+  font-size: 12px !important; font-weight: 700 !important;
+  letter-spacing: 0.1em !important; text-transform: uppercase !important;
+  height: 48px !important; padding: 0 24px !important;
+  position: relative !important; overflow: hidden !important;
 }
-.stDownloadButton > button:hover {
-  background: var(--accent-dim) !important;
+.stDownloadButton > button::after {
+  content: '' !important; position: absolute !important;
+  bottom: 0 !important; left: 0 !important;
+  width: 100% !important; height: 4px !important;
+  background: var(--accent) !important;
+  transform: translateY(100%) !important;
+  transition: transform 0.15s cubic-bezier(0.39,0.575,0.565,1) !important;
 }
+.stDownloadButton > button:hover::after { transform: translateY(0%) !important; }
 
-/* ─── Sidebar: + button (primary) ─────────────────────── */
+/* ─── Sidebar: + button ───────────────────────────────── */
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
   background: var(--accent) !important; color: #fff !important;
-  border: none !important; border-radius: 3px !important;
+  border: none !important; border-radius: 0 !important;
   height: 36px !important; min-height: 36px !important;
-  padding: 0 12px !important; font-size: 18px !important;
+  padding: 0 14px !important; font-size: 18px !important;
   font-weight: 400 !important; line-height: 1 !important;
   box-shadow: none !important; transform: none !important;
+  letter-spacing: 0 !important; text-transform: none !important;
 }
+[data-testid="stSidebar"] .stButton > button[kind="primary"]::after { display: none !important; }
 [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-  background: var(--accent-dim) !important; transform: none !important;
+  background: var(--accent-dim) !important;
 }
 
 /* ─── Sidebar: × remove buttons ───────────────────────── */
 [data-testid="stSidebar"] .stButton > button[kind="secondary"] {
   background: transparent !important; color: var(--sidebar-muted) !important;
-  border: 1px solid var(--sidebar-border) !important; border-radius: 3px !important;
+  border: 1px solid var(--sidebar-border) !important; border-radius: 0 !important;
   height: 36px !important; min-height: 36px !important;
   padding: 0 10px !important; font-size: 15px !important;
   font-weight: 400 !important; line-height: 1 !important;
-  transition: background 0.12s, border-color 0.12s, color 0.12s !important;
+  letter-spacing: 0 !important; text-transform: none !important;
+  transition: border-color 0.12s, color 0.12s !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
-  background: rgba(200,16,46,0.15) !important;
-  border-color: rgba(200,16,46,0.4) !important;
-  color: #FF6B82 !important;
+  border-color: var(--accent) !important; color: var(--accent) !important;
 }
 
 .comp-tag {
-  font-size: 13px; font-weight: 400; color: var(--sidebar-text);
+  font-size: 14px; font-weight: 300; color: var(--sidebar-text);
   padding: 8px 0 8px 2px; line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ─── Slider (main) ──────────────────────────────────── */
+/* ─── Slider ──────────────────────────────────────────── */
 .main [data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
-  background: var(--accent) !important; border-color: var(--accent) !important;
+  background: var(--text) !important; border-color: var(--text) !important;
+  border-radius: 0 !important;
 }
 
 /* ─── Divider ─────────────────────────────────────────── */
@@ -336,7 +343,7 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 
 /* ─── Expander ────────────────────────────────────────── */
 [data-testid="stExpander"] {
-  border: 1px solid var(--border) !important; border-radius: 4px !important;
+  border: 1px solid var(--border) !important; border-radius: 0 !important;
   background: var(--surface) !important; overflow: hidden !important;
 }
 [data-testid="stExpander"] summary {
@@ -347,21 +354,21 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 
 /* ─── Status / alerts ─────────────────────────────────── */
 [data-testid="stStatusWidget"], [data-testid="stStatus"] {
-  border: 1px solid var(--border) !important; border-radius: 4px !important;
+  border: 1px solid var(--border) !important; border-radius: 0 !important;
   background: var(--surface) !important; font-size: 14px !important;
 }
-[data-testid="stAlert"] { border-radius: 4px !important; font-size: 13px !important; }
+[data-testid="stAlert"] { border-radius: 0 !important; font-size: 14px !important; }
 
-/* ─── Progress bar ────────────────────────────────────── */
+/* ─── Progress bar — flat, RB cyan fill ──────────────── */
 [data-testid="stProgressBar"] > div > div {
   background: var(--accent) !important; border-radius: 0 !important;
 }
 [data-testid="stProgressBar"] > div {
-  border-radius: 0 !important; background: #E8E8E8 !important;
+  border-radius: 0 !important; background: var(--border) !important; height: 3px !important;
 }
 .progress-label {
-  font-size: 12px; font-weight: 500; color: var(--muted);
-  letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px;
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;
 }
 
 /* ─── Main block ──────────────────────────────────────── */
@@ -372,46 +379,46 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 
 /* ─── Page header ─────────────────────────────────────── */
 .sov-header {
-  padding-bottom: 1.75rem;
+  padding-bottom: 2rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
+/* RB-style wordmark bar */
 .sov-logo-bar {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 0; margin-bottom: 24px;
 }
-.sov-logo-mark {
-  width: 28px; height: 28px; background: var(--accent);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.sov-logo-mark svg { width: 16px; height: 16px; }
 .sov-logo-name {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
   text-transform: uppercase; color: var(--text);
-}
-.sov-logo-divider {
-  width: 1px; height: 16px; background: var(--border); margin: 0 2px;
+  padding-right: 14px; border-right: 1px solid var(--border);
+  margin-right: 14px; line-height: 1;
 }
 .sov-logo-product {
-  font-size: 11px; font-weight: 400; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--muted);
+  font-size: 11px; font-weight: 300; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted); line-height: 1;
 }
+/* Live indicator */
 .sov-badge {
   display: inline-flex; align-items: center; gap: 7px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
 }
 .sov-badge::before {
   content: ''; width: 5px; height: 5px;
-  background: var(--accent); display: block;
+  background: var(--accent); display: block; flex-shrink: 0;
   animation: pulse 2.4s ease-in-out infinite;
 }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+/* RBDesign-style heading: light weight, tight tracking */
 .sov-title {
-  font-size: 36px; font-weight: 700; letter-spacing: -0.03em;
-  line-height: 1.05; color: var(--text); margin: 0 0 10px;
+  font-size: 40px; font-weight: 300; letter-spacing: -0.01em;
+  line-height: 1.05; color: var(--text); margin: 0 0 12px;
 }
-.sov-subtitle { font-size: 15px; color: var(--muted); margin: 0; max-width: 560px; line-height: 1.6; font-weight: 400; }
+.sov-title strong { font-weight: 700; }
+.sov-subtitle {
+  font-size: 16px; color: var(--muted); margin: 0; max-width: 560px;
+  line-height: 1.7; font-weight: 300;
+}
 
 /* ─── Step indicator ──────────────────────────────────── */
 .sov-steps {
@@ -419,80 +426,79 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
   padding: 1.25rem 0 1.5rem; border-bottom: 1px solid var(--border);
   margin-bottom: 1.75rem;
 }
-.sov-step { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.sov-step { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .sov-step-num {
-  width: 22px; height: 22px;
-  border: 1.5px solid var(--border); background: var(--bg);
+  width: 22px; height: 22px; border-radius: 0;
+  border: 1px solid var(--border); background: var(--bg);
   color: var(--muted); font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
+  letter-spacing: 0;
 }
-.sov-step-label { font-size: 11.5px; font-weight: 500; color: var(--muted); white-space: nowrap; letter-spacing: 0.01em; }
+.sov-step-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
 .sov-step.active .sov-step-num { background: var(--text); border-color: var(--text); color: #fff; }
-.sov-step.active .sov-step-label { color: var(--text); font-weight: 700; }
+.sov-step.active .sov-step-label { color: var(--text); }
 .sov-step.done .sov-step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
-.sov-step.done .sov-step-label { color: var(--muted); }
-.sov-connector { flex:1; min-width:12px; max-width:40px; height:1px; background:var(--border); margin:0 4px; }
+.sov-connector { flex:1; min-width:12px; max-width:40px; height:1px; background:var(--border); margin:0 6px; }
 
 /* ─── Prompt review ───────────────────────────────────── */
 .prompt-review-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .prompt-count-badge {
-  font-size: 11px; font-weight: 700; color: var(--accent);
-  background: var(--accent-light); border-radius: 2px;
-  padding: 3px 10px; white-space: nowrap; letter-spacing: 0.04em;
+  font-size: 10px; font-weight: 700; color: var(--accent);
+  background: var(--accent-light); border-radius: 0;
+  padding: 3px 10px; white-space: nowrap; letter-spacing: 0.1em; text-transform: uppercase;
 }
-.prompt-review-hint { font-size: 12px; color: var(--muted); }
+.prompt-review-hint { font-size: 13px; color: var(--muted); font-weight: 300; }
 
 /* ─── Report section ──────────────────────────────────── */
 .report-meta { flex: 1; }
-.report-meta-title { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing:-0.01em; margin:0; }
-.report-meta-file { font-size: 12px; color: var(--muted); font-family:'IBM Plex Mono',monospace !important; margin-top:2px; }
+.report-meta-title { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing:0.02em; margin:0; text-transform: uppercase; font-size: 11px; }
+.report-meta-file { font-size: 12px; color: var(--muted); font-family:'IBM Plex Mono',monospace !important; margin-top:4px; font-weight: 400; }
 
 /* ─── Empty state ─────────────────────────────────────── */
 .sov-empty {
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 72px 24px; text-align: center;
-  border: 1px solid var(--border);
-  background: var(--surface); margin-top: 2rem;
+  justify-content: center; padding: 80px 24px; text-align: center;
+  border: 1px solid var(--border); background: var(--surface); margin-top: 2rem;
 }
 .sov-empty-icon {
-  width: 40px; height: 40px; background: var(--accent);
-  display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+  width: 4px; height: 48px; background: var(--accent);
+  margin-bottom: 24px;
 }
-.sov-empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 8px; }
-.sov-empty-desc { font-size: 14px; color: var(--muted); margin: 0; max-width: 360px; line-height: 1.65; }
+.sov-empty-title { font-size: 18px; font-weight: 300; color: var(--text); margin: 0 0 8px; letter-spacing: -0.01em; }
+.sov-empty-desc { font-size: 14px; color: var(--muted); margin: 0; max-width: 360px; line-height: 1.7; font-weight: 300; }
 
 /* ─── Misc ────────────────────────────────────────────── */
 [data-testid="stMetricValue"] { font-family: 'IBM Plex Mono', monospace !important; }
 
 .sov-watermark {
-  position: fixed; bottom: 18px; left: 22px; font-size: 10.5px;
-  font-weight: 500; color: #767676; letter-spacing: 0.05em;
-  opacity: 0.5; z-index: 9999; pointer-events: none;
-  font-family: 'IBM Plex Mono', monospace !important;
+  position: fixed; bottom: 18px; left: 22px; font-size: 10px;
+  font-weight: 400; color: var(--muted); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6; z-index: 9999; pointer-events: none;
 }
 
 /* Sidebar scrollbar */
-[data-testid="stSidebar"] ::-webkit-scrollbar { width: 4px; }
+[data-testid="stSidebar"] ::-webkit-scrollbar { width: 3px; }
 [data-testid="stSidebar"] ::-webkit-scrollbar-track { background: transparent; }
-[data-testid="stSidebar"] ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+[data-testid="stSidebar"] ::-webkit-scrollbar-thumb { background: #2a2a2a; }
 
 /* ─── Mobile ──────────────────────────────────────── */
 @media (max-width: 768px) {
   .main .block-container {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-    padding-top: 1.25rem !important;
-    max-width: 100% !important;
+    padding-left: 1rem !important; padding-right: 1rem !important;
+    padding-top: 1.25rem !important; max-width: 100% !important;
   }
-  .sov-title    { font-size: 26px !important; }
-  .sov-subtitle { font-size: 13px !important; }
-  .sov-badge    { font-size: 10px !important; }
+  .sov-title    { font-size: 28px !important; }
+  .sov-subtitle { font-size: 14px !important; }
   .sov-header   { padding-bottom: 1.25rem; margin-bottom: 1.25rem; }
   .sov-steps    { flex-wrap: wrap; gap: 8px; padding: 1rem 0 1.25rem; }
   .sov-connector { display: none; }
-  .sov-step-label { font-size: 10.5px !important; }
+  .sov-step-label { font-size: 10px !important; }
   .prompt-review-meta { flex-wrap: wrap; gap: 6px; }
-  .report-meta-title { font-size: 14px !important; }
+  .report-meta-title { font-size: 10px !important; }
   .report-meta-file  { font-size: 11px !important; }
   .sov-watermark { display: none !important; }
 }
@@ -683,18 +689,11 @@ def _step_indicator(active: int):
 st.markdown("""
 <div class="sov-header">
   <div class="sov-logo-bar">
-    <div class="sov-logo-mark">
-      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 2h6.5a3.5 3.5 0 0 1 0 7H3V2z" fill="white"/>
-        <path d="M3 9h5l4 5H8.5L5.5 10.5H3V14H3V9z" fill="white" opacity="0.7"/>
-      </svg>
-    </div>
     <span class="sov-logo-name">Roland Berger</span>
-    <div class="sov-logo-divider"></div>
     <span class="sov-logo-product">AI Share of Voice</span>
   </div>
-  <div class="sov-badge">AI Visibility Intelligence</div>
-  <h1 class="sov-title">Share of Voice Scanner</h1>
+  <div class="sov-badge">Live Intelligence</div>
+  <h1 class="sov-title"><strong>Share of Voice</strong> Scanner</h1>
   <p class="sov-subtitle">
     Track how AI models mention your brand — benchmark against competitors
     and identify gaps in your visibility.
