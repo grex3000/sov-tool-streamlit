@@ -26,28 +26,20 @@ from src.prompts import auto_generate_prompts
 from src.query_engine import run_queries
 from src.report import generate_report
 
-# ── Async helper (Streamlit-safe) ─────────────────────────────────────────────
+# ── Async helper ──────────────────────────────────────────────────────────────
 
 def _run_async(coro):
-    """Run a coroutine in a fresh event loop inside a daemon thread."""
     result = [None]
-    exc = [None]
-
+    exc    = [None]
     def _target():
-        try:
-            result[0] = asyncio.run(coro)
-        except Exception as e:
-            exc[0] = e
-
+        try:    result[0] = asyncio.run(coro)
+        except Exception as e: exc[0] = e
     t = threading.Thread(target=_target, daemon=True)
-    t.start()
-    t.join()
-    if exc[0]:
-        raise exc[0]
+    t.start(); t.join()
+    if exc[0]: raise exc[0]
     return result[0]
 
-
-# ── Models ────────────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 
 MODELS = [
     ("openai/gpt-5.4",               "GPT-5.4"),
@@ -55,7 +47,6 @@ MODELS = [
     ("google/gemini-3.1-pro-preview","Gemini 3.1 Pro"),
     ("perplexity/sonar-pro",         "Perplexity Sonar Pro"),
 ]
-
 DB_PATH       = "data/sov.db"
 TEMPLATE_PATH = "templates/report.html.j2"
 REPORTS_DIR   = "reports"
@@ -64,9 +55,300 @@ REPORTS_DIR   = "reports"
 
 st.set_page_config(
     page_title="AI Share of Voice",
-    page_icon="🎯",
+    page_icon="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230D9488'/></svg>",
     layout="wide",
 )
+
+# ── CSS injection ─────────────────────────────────────────────────────────────
+
+st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --accent:       #0D9488;
+  --accent-light: #CCFBF1;
+  --accent-dim:   #0F766E;
+  --bg:           #F6F7F8;
+  --surface:      #FFFFFF;
+  --text:         #18181B;
+  --muted:        #71717A;
+  --border:       #E4E4E7;
+}
+
+/* ─── Base ────────────────────────────────────────── */
+html, body, .stApp, [class*="block-container"] {
+  background-color: var(--bg) !important;
+}
+*, *::before, *::after {
+  font-family: 'Outfit', system-ui, sans-serif !important;
+}
+
+/* ─── Hide Streamlit chrome ───────────────────────── */
+#MainMenu, footer, .stDeployButton,
+[data-testid="stToolbar"], [data-testid="stDecoration"] {
+  display: none !important;
+}
+
+/* ─── Sidebar ──────────────────────────────────────── */
+[data-testid="stSidebar"] {
+  background: var(--surface) !important;
+  border-right: 1px solid var(--border) !important;
+}
+[data-testid="stSidebar"] > div:first-child {
+  padding: 2rem 1.25rem 2rem !important;
+}
+
+/* ─── Sidebar section labels ──────────────────────── */
+.sov-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.5rem 0 0.35rem;
+  display: block;
+}
+.sov-label:first-child { margin-top: 0.5rem; }
+
+/* ─── Inputs ───────────────────────────────────────── */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  padding: 10px 12px !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.12) !important;
+  outline: none !important;
+}
+[data-testid="stTextInput"] label,
+[data-testid="stTextArea"] label,
+[data-testid="stSlider"] label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+  margin-bottom: 4px !important;
+}
+
+/* ─── Primary button ────────────────────────────────── */
+.stButton > button[kind="primary"] {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  height: 48px !important;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
+  box-shadow: 0 1px 3px rgba(13,148,136,0.25) !important;
+}
+.stButton > button[kind="primary"]:hover {
+  background: var(--accent-dim) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(13,148,136,0.22) !important;
+}
+.stButton > button[kind="primary"]:active {
+  transform: scale(0.99) translateY(0) !important;
+  box-shadow: none !important;
+}
+.stButton > button[kind="primary"]:disabled {
+  background: #D1D5DB !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ─── Secondary / download button ───────────────────── */
+.stButton > button[kind="secondary"],
+.stDownloadButton > button {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+.stButton > button[kind="secondary"]:hover,
+.stDownloadButton > button:hover {
+  background: var(--bg) !important;
+  border-color: #A1A1AA !important;
+}
+
+/* ─── Slider ─────────────────────────────────────────── */
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* ─── Divider ────────────────────────────────────────── */
+hr {
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  margin: 1.5rem 0 !important;
+}
+
+/* ─── Expander ───────────────────────────────────────── */
+[data-testid="stExpander"] {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  overflow: hidden !important;
+}
+[data-testid="stExpander"] summary {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  padding: 14px 18px !important;
+}
+[data-testid="stExpander"] summary:hover {
+  background: var(--bg) !important;
+}
+
+/* ─── Status widget ──────────────────────────────────── */
+[data-testid="stStatusWidget"],
+[data-testid="stStatus"] {
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+  font-size: 14px !important;
+}
+
+/* ─── Alert / info box ───────────────────────────────── */
+[data-testid="stAlert"] {
+  border-radius: 10px !important;
+  font-size: 13px !important;
+}
+
+/* ─── Success badge ──────────────────────────────────── */
+.stAlert[data-baseweb="notification"] {
+  border-radius: 10px !important;
+}
+
+/* ─── Main content padding ───────────────────────────── */
+.main .block-container {
+  padding-top: 2.5rem !important;
+  padding-bottom: 3rem !important;
+  max-width: 900px !important;
+}
+
+/* ─── Custom header ──────────────────────────────────── */
+.sov-header {
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+.sov-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.sov-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: block;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.75); }
+}
+.sov-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.sov-subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--muted);
+  margin: 0;
+  max-width: 560px;
+}
+
+/* ─── Empty state ────────────────────────────────────── */
+.sov-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 24px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  margin-top: 2rem;
+}
+.sov-empty-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.sov-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.sov-empty-desc {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+  max-width: 360px;
+  line-height: 1.65;
+}
+
+/* ─── Report header ──────────────────────────────────── */
+.sov-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.sov-report-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.sov-report-meta {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace !important;
+  margin-top: 2px;
+}
+
+/* ─── Monospace numbers ───────────────────────────────── */
+[data-testid="stMetricValue"] {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ── Session state ─────────────────────────────────────────────────────────────
 
@@ -74,103 +356,131 @@ if "report_html" not in st.session_state:
     st.session_state.report_html = None
 if "report_path" not in st.session_state:
     st.session_state.report_path = None
+if "focus_brief" not in st.session_state:
+    st.session_state.focus_brief = ""
+if "custom_prompts_raw" not in st.session_state:
+    st.session_state.custom_prompts_raw = ""
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.title("⚙️ Configuration")
+    st.markdown("""
+    <div style="margin-bottom:1.5rem">
+      <div style="font-size:13px;font-weight:700;letter-spacing:-0.02em;color:#18181B">
+        SOV Scanner
+      </div>
+      <div style="font-size:12px;color:#71717A;margin-top:2px">Configuration</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # API key — from Streamlit secrets or manual input
+    # API key
     api_key = st.secrets.get("OPENROUTER_API_KEY", "")
     if api_key:
-        st.success("API key loaded", icon="🔑")
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;background:#CCFBF1;
+             border:1px solid #99F6E4;border-radius:8px;padding:10px 12px;margin-bottom:1rem">
+          <div style="width:6px;height:6px;border-radius:50%;background:#0D9488;flex-shrink:0"></div>
+          <span style="font-size:12px;font-weight:500;color:#0F766E">API key active</span>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        api_key = st.text_input(
-            "OpenRouter API Key",
-            type="password",
-            placeholder="sk-or-v1-...",
-            help="Get a free key at openrouter.ai",
-        )
+        st.markdown('<span class="sov-label">OpenRouter API Key</span>', unsafe_allow_html=True)
+        api_key = st.text_input("API Key", type="password",
+                                placeholder="sk-or-v1-...", label_visibility="collapsed",
+                                help="Free key at openrouter.ai")
 
-    st.divider()
+    st.markdown('<hr style="margin:1.25rem 0">', unsafe_allow_html=True)
 
-    st.subheader("🎯 Target")
-    target_name = st.text_input("Name", value="Roland Berger")
-    target_aliases = st.text_input(
-        "Aliases",
-        value="Roland Berger Strategy Consultants",
-        help="Separate multiple aliases with |",
-    )
+    st.markdown('<span class="sov-label">Target</span>', unsafe_allow_html=True)
+    target_name    = st.text_input("Name", value="Roland Berger", label_visibility="collapsed",
+                                   placeholder="Your brand or entity name")
+    target_aliases = st.text_input("Aliases", value="Roland Berger Strategy Consultants",
+                                   label_visibility="collapsed",
+                                   placeholder="Aliases separated by |",
+                                   help="Alternative names the detector should match (separate with |)")
 
-    st.subheader("🏁 Competitors")
-    competitors_raw = st.text_area(
-        "One per line",
-        value="McKinsey & Company\nBoston Consulting Group\nBain & Company",
-        height=110,
-    )
+    st.markdown('<span class="sov-label">Competitors</span>', unsafe_allow_html=True)
+    competitors_raw = st.text_area("Competitors", label_visibility="collapsed",
+                                   value="McKinsey & Company\nBoston Consulting Group\nBain & Company",
+                                   height=108, placeholder="One per line")
 
-    st.divider()
+    st.markdown('<hr style="margin:1.25rem 0">', unsafe_allow_html=True)
 
-    st.subheader("📊 Scan Settings")
-    topic = st.text_input(
-        "Topic",
-        value="strategy consulting germany",
-        placeholder="e.g. restructuring, best EV brand, cloud ERP",
-    )
-    num_prompts = st.slider(
-        "Number of prompts", min_value=2, max_value=50, value=10,
-        help="More prompts = more reliable scores. 10 is a quick test; 20+ for production.",
-    )
-    period = st.text_input(
-        "Period label", value="Q2 2026",
-        help="Appears in the report header — use consistently for trend tracking.",
-    )
+    st.markdown('<span class="sov-label">Scan Settings</span>', unsafe_allow_html=True)
+    topic = st.text_input("Topic", value="strategy consulting germany",
+                          label_visibility="collapsed",
+                          placeholder="e.g. restructuring, best EV brand, cloud ERP")
+
+    num_prompts = st.slider("Prompts per model", min_value=2, max_value=50, value=10,
+                            help="More prompts = more reliable scores. 10 for quick tests; 20+ for production.")
+
+    period = st.text_input("Period label", value="Q2 2026", label_visibility="collapsed",
+                           placeholder="e.g. Q2 2026", help="Shown in the report header")
+
+    st.markdown("""
+    <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid #E4E4E7">
+      <div style="font-size:11px;color:#71717A;line-height:1.6">
+        Queries are sent via <a href="https://openrouter.ai" target="_blank"
+        style="color:#0D9488;text-decoration:none">OpenRouter</a>.
+        Reports are stored locally.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ── Main area ─────────────────────────────────────────────────────────────────
 
-st.title("🎯 AI Share of Voice")
-st.caption(
-    "Measure how often your target is mentioned by AI models — "
-    "benchmark against competitors on any topic."
-)
-
-st.divider()
+st.markdown("""
+<div class="sov-header">
+  <div class="sov-badge">AI Visibility Intelligence</div>
+  <h1 class="sov-title">Share of Voice Scanner</h1>
+  <p class="sov-subtitle">
+    Track how AI models mention your brand across any topic.
+    Benchmark against competitors and identify where you're missing.
+  </p>
+</div>
+""", unsafe_allow_html=True)
 
 # Prompt focus expander
-with st.expander("🔍 Prompt Focus *(optional — recommended for first runs)*", expanded=False):
-    st.markdown(
-        "Describe the angle you want to focus on. The generator will use this to produce "
-        "more targeted queries. Leave blank for broad, varied coverage."
-    )
+with st.expander("Prompt Focus — narrow the scope of generated queries", expanded=False):
+    st.markdown("""
+    <div style="padding:4px 0 12px;font-size:13px;color:#71717A;line-height:1.65">
+      Describe the angle you want to focus on. The generator will produce more targeted queries.
+      Leave both fields blank for broad, varied coverage.
+    </div>
+    """, unsafe_allow_html=True)
+
     col_a, col_b = st.columns(2)
     with col_a:
-        focus_brief = st.text_input(
-            "Focus brief",
-            placeholder="e.g. DACH region, CFO persona, mid-market industrial companies",
-        )
+        st.markdown('<div style="font-size:12px;font-weight:500;color:#71717A;margin-bottom:4px">Focus brief</div>', unsafe_allow_html=True)
+        focus_brief = st.text_input("focus_brief", label_visibility="collapsed",
+                                    placeholder="e.g. DACH region, CFO persona, mid-market industrials",
+                                    value=st.session_state.focus_brief)
     with col_b:
-        custom_prompts_raw = st.text_area(
-            "Your own prompts (one per line)",
-            placeholder=(
-                "Which firms do CFOs in Germany trust for post-merger restructuring?\n"
-                "Top restructuring advisors for mid-size industrials in DACH?"
-            ),
-            height=100,
-            help="Included first and used as style examples for the generator.",
-        )
+        st.markdown('<div style="font-size:12px;font-weight:500;color:#71717A;margin-bottom:4px">Your own prompts (one per line)</div>', unsafe_allow_html=True)
+        custom_prompts_raw = st.text_area("custom_prompts", label_visibility="collapsed",
+                                          placeholder="Which firms do CFOs in Germany trust for post-merger restructuring?\nTop restructuring advisors for mid-size industrials in DACH?",
+                                          height=96,
+                                          value=st.session_state.custom_prompts_raw,
+                                          help="Included first and used as style examples for the generator.")
 
 st.write("")
 
 # Run button
-run_clicked = st.button(
-    "🚀 Run Scan",
-    type="primary",
-    disabled=not api_key or not topic.strip() or not target_name.strip(),
-    use_container_width=True,
-)
+can_run = bool(api_key and topic.strip() and target_name.strip())
+run_clicked = st.button("Run Scan", type="primary", disabled=not can_run,
+                        use_container_width=True)
 
 if not api_key:
-    st.info("Add your OpenRouter API key in the sidebar to get started.", icon="🔑")
+    st.markdown("""
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;
+         background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;margin-top:12px">
+      <div style="font-size:13px;color:#92400E">
+        Add your OpenRouter API key in the sidebar to get started.
+        Get a free key at <a href="https://openrouter.ai" target="_blank"
+        style="color:#B45309;font-weight:500">openrouter.ai</a>.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ── Scan execution ────────────────────────────────────────────────────────────
 
@@ -179,13 +489,14 @@ if run_clicked:
     competitor_list = [c.strip() for c in competitors_raw.splitlines() if c.strip()]
     custom_prompts  = [p.strip() for p in custom_prompts_raw.splitlines() if p.strip()]
 
+    st.session_state.focus_brief       = focus_brief
+    st.session_state.custom_prompts_raw = custom_prompts_raw
+    st.session_state.report_html       = None  # clear previous
+
     companies = [CompanyEntry(name=target_name, aliases=alias_list, is_target=True)] + [
         CompanyEntry(name=c, aliases=[], is_target=False) for c in competitor_list
     ]
-    company_refs = [
-        CompanyRef(name=c.name, aliases=c.aliases, is_target=c.is_target)
-        for c in companies
-    ]
+    company_refs = [CompanyRef(name=c.name, aliases=c.aliases, is_target=c.is_target) for c in companies]
 
     init_db(DB_PATH)
 
@@ -195,50 +506,37 @@ if run_clicked:
         n_to_generate = max(0, num_prompts - len(custom_prompts))
         if n_to_generate > 0:
             st.write(f"Generating {n_to_generate} prompts for **{topic}**…")
-            generated = _run_async(
-                auto_generate_prompts(
-                    topic=topic,
-                    count=n_to_generate,
-                    api_key=api_key,
-                    brief=focus_brief,
-                    examples=custom_prompts or None,
-                )
-            )
+            generated = _run_async(auto_generate_prompts(
+                topic=topic, count=n_to_generate, api_key=api_key,
+                brief=focus_brief, examples=custom_prompts or None,
+            ))
         else:
             generated = []
 
         prompt_list = list(dict.fromkeys(custom_prompts + generated))
-        src_note = (
-            f" ({len(custom_prompts)} custom + {len(generated)} generated)"
-            if custom_prompts and generated else ""
-        )
-        st.write(f"✓ {len(prompt_list)} prompts ready{src_note}")
+        src_note = (f" — {len(custom_prompts)} custom + {len(generated)} generated"
+                    if custom_prompts and generated else "")
+        st.write(f"**{len(prompt_list)} prompts ready{src_note}**")
 
         # 2 — Query models
-        st.write(f"Querying {len(MODELS)} models…")
-        results = _run_async(
-            run_queries(prompt_list, MODELS, api_key, max_concurrent=5)
-        )
-        errors = sum(1 for r in results if r.error)
-        st.write(f"✓ {len(results) - errors} responses received" +
-                 (f" ({errors} errors)" if errors else ""))
+        st.write(f"Querying {len(MODELS)} models ({len(prompt_list) * len(MODELS)} total requests)…")
+        results = _run_async(run_queries(prompt_list, MODELS, api_key, max_concurrent=5))
+        errors  = sum(1 for r in results if r.error)
+        st.write(f"**{len(results) - errors} responses received**" +
+                 (f" — {errors} failed" if errors else ""))
 
-        # 3 — Persist + detect
+        # 3 — Detect mentions
         st.write("Detecting mentions…")
         run_id = insert_run(DB_PATH, topic=topic, period=period)
         for r in results:
-            qid = insert_query(
-                DB_PATH, run_id=run_id,
-                model_id=r.model_id, model_label=r.model_label,
-                prompt=r.prompt, response=r.response,
-            )
+            qid = insert_query(DB_PATH, run_id=run_id,
+                               model_id=r.model_id, model_label=r.model_label,
+                               prompt=r.prompt, response=r.response)
             if r.response:
                 for hit in detect_all_mentions(r.response, company_refs):
-                    insert_mention(
-                        DB_PATH, query_id=qid,
-                        company_name=hit["company_name"], is_target=hit["is_target"],
-                        match_type=hit["type"], excerpt=hit["excerpt"],
-                    )
+                    insert_mention(DB_PATH, query_id=qid,
+                                   company_name=hit["company_name"], is_target=hit["is_target"],
+                                   match_type=hit["type"], excerpt=hit["excerpt"])
 
         # 4 — Report
         st.write("Generating report…")
@@ -247,34 +545,52 @@ if run_clicked:
         run_record = get_run(DB_PATH, run_id)
 
         report_path = generate_report(
-            run=run_record,
-            queries=queries,
-            mentions=mentions,
-            companies=companies,
-            template_path=TEMPLATE_PATH,
-            output_dir=REPORTS_DIR,
+            run=run_record, queries=queries, mentions=mentions, companies=companies,
+            template_path=TEMPLATE_PATH, output_dir=REPORTS_DIR,
         )
-
         st.session_state.report_html = pathlib.Path(report_path).read_text(encoding="utf-8")
         st.session_state.report_path = report_path
 
-        status.update(label="✅ Scan complete!", state="complete")
+        status.update(label="Scan complete", state="complete")
 
-# ── Report display ────────────────────────────────────────────────────────────
+# ── Report / empty state ──────────────────────────────────────────────────────
 
 if st.session_state.report_html:
-    st.divider()
+    report_name = pathlib.Path(st.session_state.report_path).name
 
-    col1, col2 = st.columns([6, 1])
-    with col1:
-        st.subheader("📊 Report")
-    with col2:
-        st.download_button(
-            label="⬇️ Download HTML",
-            data=st.session_state.report_html,
-            file_name=pathlib.Path(st.session_state.report_path).name,
-            mime="text/html",
-            use_container_width=True,
-        )
+    st.markdown(f"""
+    <div class="sov-report-header">
+      <div>
+        <div class="sov-report-title">Report</div>
+        <div class="sov-report-meta">{report_name}</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    components.html(st.session_state.report_html, height=950, scrolling=True)
+    st.download_button(
+        label="Download HTML report",
+        data=st.session_state.report_html,
+        file_name=report_name,
+        mime="text/html",
+    )
+
+    st.write("")
+    components.html(st.session_state.report_html, height=960, scrolling=True)
+
+else:
+    st.markdown("""
+    <div class="sov-empty">
+      <div class="sov-empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="#0D9488" stroke-width="1.75" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      <div class="sov-empty-title">No scan run yet</div>
+      <div class="sov-empty-desc">
+        Configure your target and competitors in the sidebar,
+        then click <strong>Run Scan</strong> to generate your first report.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
