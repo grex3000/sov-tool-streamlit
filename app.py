@@ -5,6 +5,7 @@ import asyncio
 import pathlib
 import sys
 import threading
+from datetime import date
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -50,6 +51,13 @@ MODELS = [
 DB_PATH       = "data/sov.db"
 TEMPLATE_PATH = "templates/report.html.j2"
 REPORTS_DIR   = "reports"
+
+_DEFAULT_COMPETITORS = ["McKinsey & Company", "Boston Consulting Group", "Bain & Company"]
+
+def _auto_period() -> str:
+    d = date.today()
+    q = (d.month - 1) // 3 + 1
+    return f"Q{q} {d.year}"
 
 # ── Page config ───────────────────────────────────────────────────────────────
 
@@ -138,8 +146,8 @@ html, body, .stApp, [class*="block-container"] {
   margin-bottom: 4px !important;
 }
 
-/* ─── Primary button ────────────────────────────────── */
-.stButton > button[kind="primary"] {
+/* ─── Primary button (main area) ────────────────────── */
+.main .stButton > button[kind="primary"] {
   background: var(--accent) !important;
   color: #fff !important;
   border: none !important;
@@ -151,16 +159,16 @@ html, body, .stApp, [class*="block-container"] {
   transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
   box-shadow: 0 1px 3px rgba(13,148,136,0.25) !important;
 }
-.stButton > button[kind="primary"]:hover {
+.main .stButton > button[kind="primary"]:hover {
   background: var(--accent-dim) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 16px rgba(13,148,136,0.22) !important;
 }
-.stButton > button[kind="primary"]:active {
+.main .stButton > button[kind="primary"]:active {
   transform: scale(0.99) translateY(0) !important;
   box-shadow: none !important;
 }
-.stButton > button[kind="primary"]:disabled {
+.main .stButton > button[kind="primary"]:disabled {
   background: #D1D5DB !important;
   box-shadow: none !important;
   transform: none !important;
@@ -181,6 +189,60 @@ html, body, .stApp, [class*="block-container"] {
 .stDownloadButton > button:hover {
   background: var(--bg) !important;
   border-color: #A1A1AA !important;
+}
+
+/* ─── Sidebar competitor "+ " button (primary) ────── */
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 7px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background 0.15s ease !important;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+  background: var(--accent-dim) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ─── Sidebar competitor "×" remove buttons ──────── */
+[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+  background: transparent !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 7px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease !important;
+}
+[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+  background: #FFF1F2 !important;
+  border-color: #FECDD3 !important;
+  color: #E11D48 !important;
+}
+
+/* ─── Competitor tag name ─────────────────────────── */
+.comp-tag {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  padding: 8px 0 8px 2px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ─── Slider ─────────────────────────────────────────── */
@@ -222,15 +284,27 @@ hr {
   font-size: 14px !important;
 }
 
+/* ─── Progress bar ───────────────────────────────────── */
+[data-testid="stProgressBar"] > div > div {
+  background: var(--accent) !important;
+  border-radius: 4px !important;
+}
+[data-testid="stProgressBar"] > div {
+  border-radius: 4px !important;
+  background: var(--accent-light) !important;
+}
+.progress-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+  margin-bottom: 6px;
+}
+
 /* ─── Alert / info box ───────────────────────────────── */
 [data-testid="stAlert"] {
   border-radius: 10px !important;
   font-size: 13px !important;
-}
-
-/* ─── Success badge ──────────────────────────────────── */
-.stAlert[data-baseweb="notification"] {
-  border-radius: 10px !important;
 }
 
 /* ─── Main content padding ───────────────────────────── */
@@ -347,19 +421,49 @@ hr {
 [data-testid="stMetricValue"] {
   font-family: 'JetBrains Mono', monospace !important;
 }
+
+/* ─── Developer watermark ────────────────────────────── */
+.sov-watermark {
+  position: fixed;
+  bottom: 18px;
+  right: 22px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  opacity: 0.55;
+  z-index: 9999;
+  pointer-events: none;
+  font-family: 'JetBrains Mono', monospace !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
+# ── Watermark ─────────────────────────────────────────────────────────────────
+
+st.markdown('<div class="sov-watermark">developed by gregor.weindorf</div>', unsafe_allow_html=True)
+
 # ── Session state ─────────────────────────────────────────────────────────────
 
-if "report_html" not in st.session_state:
-    st.session_state.report_html = None
-if "report_path" not in st.session_state:
-    st.session_state.report_path = None
-if "focus_brief" not in st.session_state:
-    st.session_state.focus_brief = ""
-if "custom_prompts_raw" not in st.session_state:
-    st.session_state.custom_prompts_raw = ""
+if "report_html"         not in st.session_state: st.session_state.report_html         = None
+if "report_path"         not in st.session_state: st.session_state.report_path         = None
+if "focus_brief"         not in st.session_state: st.session_state.focus_brief         = ""
+if "custom_prompts_raw"  not in st.session_state: st.session_state.custom_prompts_raw  = ""
+if "competitors"         not in st.session_state: st.session_state.competitors         = list(_DEFAULT_COMPETITORS)
+if "comp_input_key"      not in st.session_state: st.session_state.comp_input_key      = 0
+
+# ── Competitor callbacks ───────────────────────────────────────────────────────
+
+def _remove_comp(idx: int):
+    if 0 <= idx < len(st.session_state.competitors):
+        st.session_state.competitors.pop(idx)
+
+def _add_comp():
+    key = f"nc_{st.session_state.comp_input_key}"
+    val = st.session_state.get(key, "").strip()
+    if val and val not in st.session_state.competitors:
+        st.session_state.competitors.append(val)
+    st.session_state.comp_input_key += 1   # resets the input widget
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
@@ -399,10 +503,28 @@ with st.sidebar:
                                    placeholder="Aliases separated by |",
                                    help="Alternative names the detector should match (separate with |)")
 
+    st.markdown('<hr style="margin:1.25rem 0">', unsafe_allow_html=True)
+
+    # ── Competitors tag list ─────────────────────────────────────────────────
     st.markdown('<span class="sov-label">Competitors</span>', unsafe_allow_html=True)
-    competitors_raw = st.text_area("Competitors", label_visibility="collapsed",
-                                   value="McKinsey & Company\nBoston Consulting Group\nBain & Company",
-                                   height=108, placeholder="One per line")
+
+    for i, comp in enumerate(st.session_state.competitors):
+        c_name, c_btn = st.columns([5, 1])
+        with c_name:
+            st.markdown(f'<div class="comp-tag">{comp}</div>', unsafe_allow_html=True)
+        with c_btn:
+            st.button("×", key=f"rm_{i}", on_click=_remove_comp, args=(i,))
+
+    c_in, c_add = st.columns([5, 1])
+    with c_in:
+        st.text_input(
+            "new_comp",
+            key=f"nc_{st.session_state.comp_input_key}",
+            label_visibility="collapsed",
+            placeholder="Add competitor…",
+        )
+    with c_add:
+        st.button("+", key="add_comp", on_click=_add_comp, type="primary")
 
     st.markdown('<hr style="margin:1.25rem 0">', unsafe_allow_html=True)
 
@@ -413,9 +535,6 @@ with st.sidebar:
 
     num_prompts = st.slider("Prompts per model", min_value=2, max_value=50, value=10,
                             help="More prompts = more reliable scores. 10 for quick tests; 20+ for production.")
-
-    period = st.text_input("Period label", value="Q2 2026", label_visibility="collapsed",
-                           placeholder="e.g. Q2 2026", help="Shown in the report header")
 
     st.markdown("""
     <div style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid #E4E4E7">
@@ -485,20 +604,32 @@ if not api_key:
 # ── Scan execution ────────────────────────────────────────────────────────────
 
 if run_clicked:
-    alias_list      = [a.strip() for a in target_aliases.split("|") if a.strip()]
-    competitor_list = [c.strip() for c in competitors_raw.splitlines() if c.strip()]
+    alias_list     = [a.strip() for a in target_aliases.split("|") if a.strip()]
+    competitor_list = list(st.session_state.competitors)
     custom_prompts  = [p.strip() for p in custom_prompts_raw.splitlines() if p.strip()]
 
-    st.session_state.focus_brief       = focus_brief
+    st.session_state.focus_brief        = focus_brief
     st.session_state.custom_prompts_raw = custom_prompts_raw
-    st.session_state.report_html       = None  # clear previous
+    st.session_state.report_html        = None
 
     companies = [CompanyEntry(name=target_name, aliases=alias_list, is_target=True)] + [
         CompanyEntry(name=c, aliases=[], is_target=False) for c in competitor_list
     ]
     company_refs = [CompanyRef(name=c.name, aliases=c.aliases, is_target=c.is_target) for c in companies]
 
+    total_requests = num_prompts * len(MODELS)
+
     init_db(DB_PATH)
+
+    # ── Progress bar ─────────────────────────────────────────────────────────
+    prog_label = st.empty()
+    prog_bar   = st.progress(0)
+
+    def _prog(pct: float, label: str):
+        prog_label.markdown(f'<div class="progress-label">{label}</div>', unsafe_allow_html=True)
+        prog_bar.progress(pct)
+
+    _prog(0.02, "Initializing…")
 
     with st.status("Running scan…", expanded=True) as status:
 
@@ -506,6 +637,7 @@ if run_clicked:
         n_to_generate = max(0, num_prompts - len(custom_prompts))
         if n_to_generate > 0:
             st.write(f"Generating {n_to_generate} prompts for **{topic}**…")
+            _prog(0.08, "Generating prompts…")
             generated = _run_async(auto_generate_prompts(
                 topic=topic, count=n_to_generate, api_key=api_key,
                 brief=focus_brief, examples=custom_prompts or None,
@@ -517,17 +649,20 @@ if run_clicked:
         src_note = (f" — {len(custom_prompts)} custom + {len(generated)} generated"
                     if custom_prompts and generated else "")
         st.write(f"**{len(prompt_list)} prompts ready{src_note}**")
+        _prog(0.20, f"{len(prompt_list)} prompts ready — querying {len(MODELS)} models…")
 
         # 2 — Query models
-        st.write(f"Querying {len(MODELS)} models ({len(prompt_list) * len(MODELS)} total requests)…")
+        real_total = len(prompt_list) * len(MODELS)
+        st.write(f"Querying {len(MODELS)} models ({real_total} total requests)…")
         results = _run_async(run_queries(prompt_list, MODELS, api_key, max_concurrent=5))
         errors  = sum(1 for r in results if r.error)
         st.write(f"**{len(results) - errors} responses received**" +
                  (f" — {errors} failed" if errors else ""))
+        _prog(0.75, f"{len(results) - errors}/{real_total} responses received — detecting mentions…")
 
         # 3 — Detect mentions
         st.write("Detecting mentions…")
-        run_id = insert_run(DB_PATH, topic=topic, period=period)
+        run_id = insert_run(DB_PATH, topic=topic, period=_auto_period())
         for r in results:
             qid = insert_query(DB_PATH, run_id=run_id,
                                model_id=r.model_id, model_label=r.model_label,
@@ -537,6 +672,7 @@ if run_clicked:
                     insert_mention(DB_PATH, query_id=qid,
                                    company_name=hit["company_name"], is_target=hit["is_target"],
                                    match_type=hit["type"], excerpt=hit["excerpt"])
+        _prog(0.88, "Mentions detected — building report…")
 
         # 4 — Report
         st.write("Generating report…")
@@ -551,6 +687,7 @@ if run_clicked:
         st.session_state.report_html = pathlib.Path(report_path).read_text(encoding="utf-8")
         st.session_state.report_path = report_path
 
+        _prog(1.0, "Scan complete")
         status.update(label="Scan complete", state="complete")
 
 # ── Report / empty state ──────────────────────────────────────────────────────
