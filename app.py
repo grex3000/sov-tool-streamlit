@@ -104,6 +104,7 @@ st.set_page_config(
     page_title="AI Share of Voice",
     page_icon="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text x='50' y='68' font-size='58' font-family='Arial,sans-serif' font-weight='700' text-anchor='middle' fill='%2300aac9'>B</text></svg>",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
@@ -146,6 +147,11 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
 
 #MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
+
+/* ─── Hide sidebar collapse/expand toggle ─────────────── */
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"],
+button[data-testid="baseButton-header"] { display: none !important; }
 
 /* ─── Sidebar — black, like RB's fixed header nav ──────── */
 [data-testid="stSidebar"] {
