@@ -395,6 +395,8 @@ button[data-testid^="baseButton"] {
 .main button[data-testid="baseButton-primary"]:hover::after {
   transform: translateY(0%) !important;
 }
+.main button[data-testid="baseButton-primary"] span,
+.main button[data-testid="baseButton-primary"] p { color: #ffffff !important; }
 .main button[data-testid="baseButton-primary"]:disabled {
   background:       var(--border) !important;
   background-color: var(--border) !important;
@@ -416,6 +418,8 @@ button[data-testid^="baseButton"] {
   transition:       border-color 0.15s !important;
   box-shadow:       none !important;
 }
+.main [data-testid="stButton"] button[data-testid="baseButton-secondary"] span,
+.main [data-testid="stButton"] button[data-testid="baseButton-secondary"] p { color: #000000 !important; }
 .main [data-testid="stButton"] button[data-testid="baseButton-secondary"]:hover {
   border-color: #000000 !important;
   background:       #ffffff !important;
@@ -451,6 +455,8 @@ button[data-testid^="baseButton"] {
 [data-testid="stDownloadButton"] button:hover::after {
   transform: translateY(0%) !important;
 }
+[data-testid="stDownloadButton"] button span,
+[data-testid="stDownloadButton"] button p { color: #ffffff !important; }
 
 /* ─── Sidebar: + add button (cyan) ───────────────────── */
 [data-testid="stSidebar"] button[data-testid="baseButton-primary"] {
@@ -472,6 +478,8 @@ button[data-testid^="baseButton"] {
 [data-testid="stSidebar"] button[data-testid="baseButton-primary"]::after {
   display: none !important;
 }
+[data-testid="stSidebar"] button[data-testid="baseButton-primary"] span,
+[data-testid="stSidebar"] button[data-testid="baseButton-primary"] p { color: #ffffff !important; }
 [data-testid="stSidebar"] button[data-testid="baseButton-primary"]:hover {
   background:       var(--accent-dim) !important;
   background-color: var(--accent-dim) !important;
@@ -479,10 +487,10 @@ button[data-testid^="baseButton"] {
 
 /* ─── Sidebar: × remove button ───────────────────────── */
 [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
-  background:       transparent !important;
-  background-color: transparent !important;
-  color:            var(--sidebar-muted) !important;
-  border:           1px solid var(--sidebar-border) !important;
+  background:       #1a1a1a !important;
+  background-color: #1a1a1a !important;
+  color:            #a0a0a0 !important;
+  border:           1px solid #444444 !important;
   border-radius:    0 !important;
   height:           36px !important;
   min-height:       36px !important;
@@ -494,8 +502,20 @@ button[data-testid^="baseButton"] {
   text-transform:   none !important;
   transition:       border-color 0.12s, color 0.12s !important;
 }
+/* Target the inner span Streamlit wraps label text in */
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] span,
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p {
+  color: #a0a0a0 !important;
+}
 [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
-  border-color: var(--accent) !important; color: var(--accent) !important;
+  background:       #222222 !important;
+  background-color: #222222 !important;
+  border-color:     var(--accent) !important;
+  color:            var(--accent) !important;
+}
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover span,
+[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover p {
+  color: var(--accent) !important;
 }
 
 .comp-tag {
