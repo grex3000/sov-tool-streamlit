@@ -59,6 +59,33 @@ def _run_async_polling(coro, on_tick=None, interval: float = 0.35):
     if exc[0]: raise exc[0]
     return result[0]
 
+# ── Report iframe helper ──────────────────────────────────────────────────────
+
+def _auto_height_report(html: str) -> str:
+    """Inject a postMessage script so Streamlit resizes the iframe to content height,
+    eliminating the inner scroll — the page itself becomes the only scrollbar."""
+    script = (
+        "<script>"
+        "(function(){"
+        "function send(){"
+        "var h=Math.max("
+        "document.body?document.body.scrollHeight:0,"
+        "document.documentElement?document.documentElement.scrollHeight:0"
+        ")+32;"  # 32px safety margin
+        "window.parent.postMessage("
+        "{isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:h}"
+        ",'*');"
+        "}"
+        "if(document.readyState==='loading'){"
+        "document.addEventListener('DOMContentLoaded',function(){send();setTimeout(send,600);});"
+        "}else{send();setTimeout(send,600);}"
+        "})();"
+        "</script>"
+    )
+    if "</body>" in html:
+        return html.replace("</body>", script + "</body>", 1)
+    return html + script
+
 # ── Share helper ──────────────────────────────────────────────────────────────
 
 def _upload_gist(html: str, filename: str, token: str) -> str:
@@ -426,6 +453,38 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
   opacity: 0.55; z-index: 9999; pointer-events: none;
   font-family: 'JetBrains Mono', monospace !important;
 }
+
+/* ─── Mobile ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Tighter page padding */
+  .main .block-container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    padding-top: 1.25rem !important;
+    max-width: 100% !important;
+  }
+
+  /* Smaller header text */
+  .sov-title    { font-size: 24px !important; }
+  .sov-subtitle { font-size: 13px !important; }
+  .sov-badge    { font-size: 10px !important; }
+  .sov-header   { padding-bottom: 1.25rem; margin-bottom: 1.25rem; }
+
+  /* Step indicator: hide connectors, wrap steps */
+  .sov-steps    { flex-wrap: wrap; gap: 8px; padding: 1rem 0 1.25rem; }
+  .sov-connector { display: none; }
+  .sov-step-label { font-size: 11px !important; }
+
+  /* Prompt review meta wraps */
+  .prompt-review-meta { flex-wrap: wrap; gap: 6px; }
+
+  /* Report meta stack */
+  .report-meta-title { font-size: 14px !important; }
+  .report-meta-file  { font-size: 11px !important; }
+
+  /* Hide watermark on mobile — no room */
+  .sov-watermark { display: none !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -717,21 +776,22 @@ if stage == "config":
         st.markdown('<hr style="margin:2rem 0">', unsafe_allow_html=True)
         report_name = pathlib.Path(_ss.report_path).name
 
-        # Action row
-        col_meta, col_dl, col_share, col_new = st.columns([3, 1.3, 1.3, 1])
-        with col_meta:
-            st.markdown(f"""
-            <div class="report-meta">
-              <div class="report-meta-title">Latest Report</div>
-              <div class="report-meta-file">{report_name}</div>
-            </div>""", unsafe_allow_html=True)
+        # Meta row
+        st.markdown(f"""
+        <div class="report-meta">
+          <div class="report-meta-title">Latest Report</div>
+          <div class="report-meta-file">{report_name}</div>
+        </div>""", unsafe_allow_html=True)
+
+        # Button row — equal columns, stack gracefully on mobile
+        col_dl, col_share, col_new = st.columns(3)
         with col_dl:
             st.download_button("Download Report", data=_ss.report_html,
                                file_name=report_name, mime="text/html",
                                use_container_width=True)
         with col_share:
             if github_token:
-                share_label = "Shared" if _ss.report_share_url else "Share Link"
+                share_label    = "Shared" if _ss.report_share_url else "Share Link"
                 share_disabled = bool(_ss.report_share_url)
                 if st.button(share_label, disabled=share_disabled,
                              use_container_width=True):
@@ -770,7 +830,9 @@ if stage == "config":
             )
 
         st.write("")
-        components.html(_ss.report_html, height=1080, scrolling=True)
+        # Auto-height: injected script sends content height via postMessage so
+        # the iframe expands to full report height — no inner scroll, page scrolls naturally.
+        components.html(_auto_height_report(_ss.report_html), height=800, scrolling=False)
 
     elif can_generate:
         st.markdown("""
