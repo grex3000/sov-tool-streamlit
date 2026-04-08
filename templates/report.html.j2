@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Share of Voice — {{ company_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ─── TOKENS ──────────────────────────────────────────────────── */
+    :root {
+      --bg:           #F6F7F8;
+      --surface:      #FFFFFF;
+      --text:         #18181B;
+      --muted:        #71717A;
+      --border:       #E4E4E7;
+      --accent:       #0D9488;
+      --accent-light: #CCFBF1;
+      --accent-dim:   #0F766E;
+      --slate:        #94A3B8;
+      --slate-light:  #F1F5F9;
+      --high-bg:      #DCFCE7; --high-text: #166534;
+      --mid-bg:       #FEF9C3; --mid-text:  #854D0E;
+      --low-bg:       #FEE2E2; --low-text:  #991B1B;
+      --sans: 'Outfit', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+    .page { max-width: 1160px; margin: 0 auto; padding: 56px 48px; }
+
+    /* ─── HEADER ──────────────────────────────────────────────────── */
+    .report-header {
+      display: grid; grid-template-columns: 1fr auto;
+      align-items: start; gap: 32px;
+      padding-bottom: 52px; border-bottom: 1px solid var(--border); margin-bottom: 64px;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 18px;
+    }
+    .badge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); display: block;
+      animation: dot-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.75)} }
+    .company-name { font-size: 36px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+    .report-subtitle { font-size: 20px; font-weight: 400; color: var(--muted); margin-top: 6px; }
+    .period-pill {
+      font-family: var(--mono); font-size: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 6px 16px; border-radius: 100px; display: inline-block; margin-bottom: 10px;
+    }
+    .gen-date { font-size: 12px; color: var(--muted); text-align: right; }
+
+    /* ─── SECTIONS ────────────────────────────────────────────────── */
+    .section { margin-bottom: 72px; opacity: 0; transform: translateY(14px);
+      transition: opacity .5s ease, transform .5s cubic-bezier(.16,1,.3,1); }
+    .section.visible { opacity: 1; transform: translateY(0); }
+    .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+    .sec-num { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+    .sec-title { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+    .sec-desc { font-size: 14px; color: var(--muted); margin-top: 4px; margin-bottom: 24px; max-width: 620px; }
+
+    /* ─── KPI ROW ─────────────────────────────────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-top: 24px;
+    }
+    .kpi-cell { background: var(--surface); padding: 26px 28px 22px; }
+    .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .kpi-value { font-family: var(--mono); font-size: 38px; font-weight: 600; letter-spacing: -.04em; line-height: 1; }
+    .kpi-value.accent { color: var(--accent); }
+    .kpi-value.md { font-size: 22px; padding-top: 8px; letter-spacing: -.02em; font-family: var(--sans); }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      padding: 3px 9px; border-radius: 100px; margin-top: 8px;
+    }
+    .pill.high   { background: var(--high-bg); color: var(--high-text); }
+    .pill.mid    { background: var(--mid-bg);  color: var(--mid-text);  }
+    .pill.low    { background: var(--low-bg);  color: var(--low-text);  }
+    .pill.neutral { background: var(--slate-light); color: var(--muted); }
+
+    /* ─── SCORE BADGES ────────────────────────────────────────────── */
+    .score-badge {
+      font-family: var(--mono); font-size: 13px; font-weight: 500;
+      display: inline-block; padding: 4px 10px; border-radius: 6px;
+      min-width: 54px; text-align: center;
+    }
+    .score-high { background: var(--high-bg); color: var(--high-text); }
+    .score-mid  { background: var(--mid-bg);  color: var(--mid-text);  }
+    .score-low  { background: var(--low-bg);  color: var(--low-text);  }
+
+    /* ─── LEGEND ──────────────────────────────────────────────────── */
+    .legend { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* ─── COMPETITIVE MATRIX TABLE ────────────────────────────────── */
+    .matrix-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .matrix-table th {
+      padding: 10px 14px; font-size: 11px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+      border-bottom: 2px solid var(--border); white-space: nowrap;
+    }
+    .matrix-table th.center { text-align: center; }
+    .matrix-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .matrix-table tbody tr:last-child td { border-bottom: none; }
+    .matrix-table tbody tr:hover td { background: rgba(0,0,0,.018); }
+
+    /* target row highlight */
+    .matrix-table tbody tr.target-row td { background: rgba(13,148,136,.04); }
+    .matrix-table tbody tr.target-row:hover td { background: rgba(13,148,136,.07); }
+
+    .company-cell { display: flex; align-items: center; gap: 10px; }
+    .company-cell-star { color: var(--accent); font-size: 13px; flex-shrink: 0; }
+    .company-cell-name { font-weight: 500; font-size: 14px; }
+    .company-cell-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .score-cell { text-align: center; }
+    .avg-col { border-left: 2px solid var(--border) !important; font-family: var(--mono); font-size: 13px; font-weight: 600; text-align: center; }
+    .matrix-table tfoot td {
+      background: var(--bg); font-family: var(--mono); font-size: 12px; font-weight: 600;
+      text-align: center; padding: 12px 14px; color: var(--muted);
+    }
+    .matrix-table tfoot td:first-child {
+      font-family: var(--sans); font-size: 11px; letter-spacing: .08em;
+      text-transform: uppercase; text-align: left;
+    }
+    .matrix-table tfoot td.grand-avg { border-left: 2px solid var(--border); color: var(--accent); }
+
+    /* ─── MODEL SPOTLIGHT BARS ────────────────────────────────────── */
+    .spotlight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .spotlight-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px 28px;
+    }
+    .spotlight-model-label { font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+    .bar-row { display: grid; grid-template-columns: 148px 1fr 64px; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .bar-label { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-label.is-target { color: var(--accent-dim); font-weight: 600; }
+    .bar-label.is-competitor { color: var(--muted); }
+    .bar-track { height: 7px; background: var(--bg); border-radius: 100px; overflow: hidden; border: 1px solid var(--border); }
+    .bar-fill { height: 100%; border-radius: 100px; transform-origin: left; animation: bar-grow .9s cubic-bezier(.16,1,.3,1) both; }
+    .bar-fill.target     { background: var(--accent); }
+    .bar-fill.competitor { background: var(--slate); }
+    @keyframes bar-grow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+    .bar-value { font-family: var(--mono); font-size: 12px; font-weight: 500; text-align: right; }
+
+    /* ─── CITATIONS ───────────────────────────────────────────────── */
+    .citation-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 32px; margin-bottom: 16px;
+      transition: box-shadow .2s ease;
+    }
+    .citation-card:hover { box-shadow: 0 4px 24px -8px rgba(0,0,0,.08); }
+    .citation-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .model-pill { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: var(--accent-light); color: var(--accent-dim); padding: 4px 10px; border-radius: 100px; }
+    .topic-pill { font-size: 11px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 4px 10px; border-radius: 100px; }
+    .cit-date   { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+    .cit-label  { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .cit-prompt { font-size: 14px; font-weight: 500; font-style: italic; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
+    .cit-body   { font-size: 14px; color: var(--muted); line-height: 1.75; }
+    .mention-target     { background: var(--accent-light); color: var(--accent-dim); font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+    .mention-competitor { background: var(--slate-light);  color: #334155;          font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+
+    /* ─── GAP ANALYSIS ───────────────────────────────────────────── */
+    .gap-kpi-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .gap-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 28px; }
+    .gap-table th {
+      padding: 9px 14px; font-size: 11px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+      border-bottom: 2px solid var(--border); text-align: left;
+    }
+    .gap-table th.right { text-align: right; }
+    .gap-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .gap-table tbody tr:last-child td { border-bottom: none; }
+    .gap-table tbody tr:hover td { background: rgba(0,0,0,.018); }
+    .gap-bar-cell { width: 180px; }
+    .gap-bar-track { height: 6px; background: var(--bg); border-radius: 100px; overflow: hidden; border: 1px solid var(--border); }
+    .gap-bar-fill { height: 100%; border-radius: 100px; background: #F97316; }
+    .gap-count { font-family: var(--mono); font-size: 12px; font-weight: 600; text-align: right; color: #9A3412; }
+    .gap-pct   { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; }
+    .rec-list  { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .rec-item  {
+      display: grid; grid-template-columns: 24px 1fr; gap: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 20px; font-size: 14px;
+      line-height: 1.65; align-items: start;
+    }
+    .rec-icon  { font-size: 16px; padding-top: 1px; }
+    .consensus-gap-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+    .consensus-gap-item {
+      background: #FFF7ED; border: 1px solid #FED7AA;
+      border-radius: 8px; padding: 12px 16px; font-size: 13px;
+    }
+    .consensus-gap-prompt { color: var(--text); font-weight: 500; margin-bottom: 6px; }
+    .consensus-gap-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    .gap-section-title { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; margin-top: 28px; }
+
+    /* ─── METHODOLOGY ─────────────────────────────────────────────── */
+    .meth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+    .meth-item { padding: 20px 22px; border: 1px solid var(--border); border-radius: 8px; }
+    .meth-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    .meth-text  { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ─── FOOTER ──────────────────────────────────────────────────── */
+    .report-footer { margin-top: 72px; padding-top: 26px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .footer-co   { font-size: 13px; font-weight: 600; }
+    .footer-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    /* ─── PROMPTS LIST ────────────────────────────────────────────── */
+    .prompt-list { list-style: none; counter-reset: prompt-counter; }
+    .prompt-item {
+      counter-increment: prompt-counter;
+      display: grid; grid-template-columns: 28px 1fr;
+      gap: 12px; padding: 13px 0;
+      border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .prompt-item:last-child { border-bottom: none; }
+    .prompt-item::before {
+      content: counter(prompt-counter);
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      color: var(--muted); padding-top: 2px;
+    }
+
+    /* ─── RESPONSE LOG ────────────────────────────────────────────── */
+    .response-entry {
+      border: 1px solid var(--border); border-radius: 12px;
+      margin-bottom: 10px; overflow: hidden;
+      transition: border-color .2s ease;
+    }
+    .response-entry[open] { border-color: rgba(13,148,136,.4); }
+    .response-summary {
+      padding: 14px 20px; cursor: pointer; list-style: none;
+      display: grid; grid-template-columns: 28px 1fr auto;
+      align-items: start; gap: 12px;
+      font-size: 14px; font-weight: 500;
+      background: var(--surface); user-select: none;
+    }
+    .response-summary::-webkit-details-marker { display: none; }
+    .summary-arrow {
+      font-size: 9px; color: var(--muted); padding-top: 4px;
+      transition: transform .2s ease; display: inline-block;
+    }
+    .response-entry[open] .summary-arrow { transform: rotate(90deg); }
+    .summary-prompt { line-height: 1.5; }
+    .mention-tags { display: flex; gap: 5px; flex-wrap: wrap; padding-top: 2px; }
+    .tag-target     { font-size: 11px; font-weight: 600; background: var(--accent-light); color: var(--accent-dim); padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+    .tag-competitor { font-size: 11px; font-weight: 600; background: var(--slate-light); color: #334155; padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+    .tag-none       { font-size: 11px; color: var(--muted); padding: 2px 8px; border-radius: 100px; background: var(--bg); border: 1px solid var(--border); white-space: nowrap; }
+
+    .response-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      border-top: 1px solid var(--border);
+    }
+    .response-model-card {
+      padding: 20px 22px; border-right: 1px solid var(--border);
+    }
+    .response-model-card:last-child { border-right: none; }
+    .response-model-header {
+      font-size: 11px; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--muted);
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .response-text {
+      font-size: 13px; color: var(--muted); line-height: 1.72;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* ─── EMPTY STATE ─────────────────────────────────────────────── */
+    .empty-state { font-size: 14px; color: var(--muted); padding: 32px 0; }
+
+    /* ─── PRINT ───────────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; }
+      .section { opacity: 1; transform: none; }
+      .bar-fill { animation: none; }
+      .score-high,.score-mid,.score-low,.pill,.mention-target,.mention-competitor
+        { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .page { padding: 32px 24px; }
+      .kpi-row { grid-template-columns: 1fr 1fr; }
+      .spotlight-grid { grid-template-columns: 1fr; }
+      .meth-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .page { padding: 24px 16px; }
+      .report-header { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: 1fr; }
+      .company-name { font-size: 26px; }
+      .bar-row { grid-template-columns: 100px 1fr 50px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  {# ════════════════════════════════ HEADER ════════════════════════════════ #}
+  <header class="report-header">
+    <div>
+      <div class="badge">AI Visibility Intelligence</div>
+      <div class="company-name" data-report-field="company-name">{{ company_name }}</div>
+      <div class="report-subtitle">AI Share of Voice Report</div>
+    </div>
+    <div>
+      <div class="period-pill" data-report-field="period">{{ period }}</div>
+      <div class="gen-date">Generated <span data-report-field="generated-date">{{ generated_date }}</span></div>
+    </div>
+  </header>
+
+  {# ════════════════════════════ 01 · EXECUTIVE SUMMARY ═════════════════════ #}
+  <section class="section" id="executive-summary">
+    <div class="section-header">
+      <span class="sec-num">01</span>
+      <span class="sec-title">Executive Summary</span>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-cell">
+        <div class="kpi-label">Your Avg. SOV</div>
+        <div class="kpi-value accent" data-report-field="target-avg-sov">{{ target_avg_sov }}%</div>
+        <div class="pill {{ target_score_class | replace('score-','') }}" data-report-field="target-score">
+          {{ target_score_class | replace('score-','') | upper }}
+        </div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Rank vs Competitors</div>
+        <div class="kpi-value accent" data-report-field="target-rank">#{{ target_rank }}</div>
+        <div class="kpi-sub">out of {{ company_count }} companies tracked</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Models Analyzed</div>
+        <div class="kpi-value" data-report-field="model-count">{{ model_count }}</div>
+        <div class="kpi-sub">{{ query_count }} total queries</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Topic</div>
+        <div class="kpi-value md" data-report-field="topic">{{ topic }}</div>
+        <div class="kpi-sub">{{ competitor_count }} competitor{{ 's' if competitor_count != 1 }} tracked</div>
+      </div>
+    </div>
+  </section>
+
+  {# ════════════════════════ 02 · COMPETITIVE SOV MATRIX ════════════════════ #}
+  <section class="section" id="sov-matrix">
+    <div class="section-header">
+      <span class="sec-num">02</span>
+      <span class="sec-title">Competitive SOV Matrix</span>
+    </div>
+    <p class="sec-desc">
+      % of responses mentioning each company when queried about
+      <strong>{{ topic }}</strong>.
+      Based on {{ (query_count // model_count) if model_count else 0 }} queries per model.
+    </p>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--high-bg);border:1px solid #166534"></div>High (&ge; 40%)
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--mid-bg);border:1px solid #854D0E"></div>Medium (20–39%)
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--low-bg);border:1px solid #991B1B"></div>Low (&lt; 20%)
+      </div>
+      <div class="legend-item" style="margin-left:auto">
+        <div class="legend-dot" style="background:rgba(13,148,136,.15);border:1px solid var(--accent)"></div>Your firm
+      </div>
+    </div>
+
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th style="width:200px">Company</th>
+          {% for m in models %}
+          <th class="center" data-model-id="{{ m.id }}">{{ m.label }}</th>
+          {% endfor %}
+          <th class="center avg-col">Avg.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for company in companies %}
+        <tr class="{{ 'target-row' if company.is_target else '' }}" data-company="{{ company.name }}">
+          <td>
+            <div class="company-cell">
+              {% if company.is_target %}
+              <span class="company-cell-star">&#9733;</span>
+              {% else %}
+              <span style="width:22px;flex-shrink:0"></span>
+              {% endif %}
+              <div>
+                <div class="company-cell-name">{{ company.name }}</div>
+                {% if company.is_target %}
+                <div class="company-cell-sub">Your target</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          {% for m in models %}
+          {% set md = company.by_model.get(m.id, {}) %}
+          <td class="score-cell">
+            <span class="score-badge {{ md.get('score_class','score-low') }}"
+                  data-sov-value="{{ md.get('sov_pct', 0) }}"
+                  data-model-id="{{ m.id }}">
+              {{ md.get('sov_pct', 0) }}%
+            </span>
+          </td>
+          {% endfor %}
+          <td class="avg-col" data-company-avg="{{ company.name }}">{{ company.avg_sov }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Queries / model</td>
+          {% for m in models %}
+          <td data-model-id="{{ m.id }}">{{ (query_count // model_count) if model_count else 0 }}</td>
+          {% endfor %}
+          <td class="grand-avg avg-col" data-report-field="total-queries">{{ query_count }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+
+  {# ════════════════════════ 03 · MODEL SPOTLIGHT ════════════════════════════ #}
+  <section class="section" id="model-spotlight">
+    <div class="section-header">
+      <span class="sec-num">03</span>
+      <span class="sec-title">Model Spotlight</span>
+    </div>
+    <p class="sec-desc">
+      Per-model competitive ranking — how each AI positions your firm versus tracked competitors.
+    </p>
+
+    <div class="spotlight-grid">
+      {% for model_id, spotlight in by_model_spotlight.items() %}
+      <div class="spotlight-card" data-model-id="{{ model_id }}">
+        <div class="spotlight-model-label">{{ spotlight.label }}</div>
+        {% for c in spotlight.companies %}
+        <div class="bar-row" data-company="{{ c.name }}">
+          <span class="bar-label {{ 'is-target' if c.is_target else 'is-competitor' }}">
+            {% if c.is_target %}&#9733; {% endif %}{{ c.name | truncate(20, True, '…') }}
+          </span>
+          <div class="bar-track">
+            <div class="bar-fill {{ 'target' if c.is_target else 'competitor' }}"
+                 style="width:{{ c.sov_pct }}%"></div>
+          </div>
+          <span class="bar-value">{{ c.sov_pct }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ════════════════════════ 04 · GAP ANALYSIS ══════════════════════════════ #}
+  {% if gap %}
+  <section class="section" id="gap-analysis">
+    <div class="section-header">
+      <span class="sec-num">04</span>
+      <span class="sec-title">GAP Analysis</span>
+    </div>
+    <p class="sec-desc">
+      Queries where competitors were recommended but <strong>{{ company_name }}</strong> was not.
+      These are your highest-priority visibility gaps.
+    </p>
+
+    {# KPI strip #}
+    <div class="gap-kpi-row">
+      <div class="kpi-cell">
+        <div class="kpi-label">Gap Rate</div>
+        <div class="kpi-value" style="color:{% if gap.gap_pct >= 50 %}#DC2626{% elif gap.gap_pct >= 25 %}#D97706{% else %}#16A34A{% endif %}">{{ gap.gap_pct }}%</div>
+        <div class="kpi-sub">{{ gap.gap_prompt_count }} of {{ gap.total_prompts }} queries missed you</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Consensus Gaps</div>
+        <div class="kpi-value" style="color:{% if gap.consensus_gaps %}#DC2626{% else %}#16A34A{% endif %}">{{ gap.consensus_gaps | length }}</div>
+        <div class="kpi-sub">queries where no model mentioned you</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-label">Top Competitor Gap</div>
+        {% if gap.by_competitor %}
+        <div class="kpi-value md">{{ gap.by_competitor[0].name | truncate(22, True, '…') }}</div>
+        <div class="kpi-sub">appears without you in {{ gap.by_competitor[0].gap_count }} queries</div>
+        {% else %}
+        <div class="kpi-value md" style="color:var(--muted)">—</div>
+        <div class="kpi-sub">no competitor gaps found</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Recommendations #}
+    <div class="gap-section-title">Recommendations</div>
+    <ul class="rec-list">
+      {% for rec in gap.recommendations %}
+      <li class="rec-item">
+        <span class="rec-icon">→</span>
+        <span>{{ rec | safe }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {# Per-competitor gap table #}
+    {% if gap.by_competitor %}
+    <div class="gap-section-title" style="margin-top:36px">Gap by Competitor</div>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th>Competitor</th>
+          <th class="right">Gap Queries</th>
+          <th class="gap-bar-cell"></th>
+          <th class="right">Gap Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in gap.by_competitor %}
+        <tr>
+          <td style="font-weight:500">{{ c.name }}</td>
+          <td class="gap-count">{{ c.gap_count }}</td>
+          <td class="gap-bar-cell">
+            <div class="gap-bar-track">
+              <div class="gap-bar-fill" style="width:{{ c.gap_pct }}%"></div>
+            </div>
+          </td>
+          <td class="gap-pct">{{ c.gap_pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Per-model gap table #}
+    {% if gap.by_model %}
+    <div class="gap-section-title">Gap by Model</div>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th class="right">Gap Queries</th>
+          <th class="gap-bar-cell"></th>
+          <th class="right">Gap Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in gap.by_model %}
+        <tr>
+          <td style="font-weight:500">{{ m.label }}</td>
+          <td class="gap-count">{{ m.gap_count }} / {{ m.total }}</td>
+          <td class="gap-bar-cell">
+            <div class="gap-bar-track">
+              <div class="gap-bar-fill" style="width:{{ m.gap_pct }}%"></div>
+            </div>
+          </td>
+          <td class="gap-pct">{{ m.gap_pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Consensus gaps #}
+    {% if gap.consensus_gaps %}
+    <div class="gap-section-title">Consensus Gaps — Highest Priority</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      These queries triggered competitor mentions from <em>every</em> model without mentioning you.
+    </p>
+    <ul class="consensus-gap-list">
+      {% for g in gap.consensus_gaps %}
+      <li class="consensus-gap-item">
+        <div class="consensus-gap-prompt">&ldquo;{{ g.prompt }}&rdquo;</div>
+        <div class="consensus-gap-tags">
+          {% for c in g.competitors_mentioned %}
+          <span class="tag-competitor">{{ c }}</span>
+          {% endfor %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+  </section>
+  {% endif %}
+
+  {# ════════════════════════ 05 · EXAMPLE CITATIONS ═════════════════════════ #}
+  <section class="section" id="citations">
+    <div class="section-header">
+      <span class="sec-num">05</span>
+      <span class="sec-title">Example Citations</span>
+    </div>
+    <p class="sec-desc">
+      Queries where <strong>{{ company_name }}</strong> was mentioned.
+      <span class="mention-target" style="font-size:12px">Target</span> and
+      <span class="mention-competitor" style="font-size:12px">competitor</span>
+      names are highlighted.
+    </p>
+
+    {% if citations %}
+      {% for c in citations %}
+      <div class="citation-card" data-citation-id="{{ loop.index }}">
+        <div class="citation-meta">
+          <span class="model-pill" data-citation-model="{{ c.model_id }}">{{ c.model_label }}</span>
+          <span class="topic-pill" data-citation-topic="{{ topic }}">{{ topic }}</span>
+          <span class="cit-date" data-citation-date="{{ c.query_date[:10] if c.query_date else '' }}">
+            {{ c.query_date[:10] if c.query_date else '' }}
+          </span>
+        </div>
+        <div class="cit-label">Query</div>
+        <div class="cit-prompt" data-citation-prompt="{{ c.prompt }}">&ldquo;{{ c.prompt }}&rdquo;</div>
+        <div class="cit-label">Response Excerpt</div>
+        <div class="cit-body">
+          {% if c.excerpt_html %}
+            {{ c.excerpt_html }}
+          {% else %}
+            {{ c.excerpt }}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-state">No citations found for {{ company_name }} in this run.</p>
+    {% endif %}
+  </section>
+
+  {# ════════════════════════ 06 · METHODOLOGY ════════════════════════════════ #}
+  <section class="section" id="methodology">
+    <div class="section-header">
+      <span class="sec-num">06</span>
+      <span class="sec-title">Methodology</span>
+    </div>
+
+    <div class="meth-grid">
+      <div class="meth-item">
+        <div class="meth-title">What is AI Share of Voice?</div>
+        <div class="meth-text">
+          AI SOV measures how often a company is mentioned when AI models respond
+          to queries about a specific topic. A score of 40% means the company appeared
+          in 40 out of 100 sampled responses.
+        </div>
+      </div>
+      <div class="meth-item">
+        <div class="meth-title">Query Methodology</div>
+        <div class="meth-text" data-report-field="query-methodology">
+          {{ (query_count // model_count) if model_count else 0 }} diverse natural-language queries
+          were sent to each of {{ model_count }} models, varying phrasing, persona, context,
+          geography, and scale. Each query ran in a fresh session context.
+        </div>
+      </div>
+      <div class="meth-item">
+        <div class="meth-title">Mention Detection</div>
+        <div class="meth-text">
+          A mention is counted when the company name or a registered alias appears in
+          the response (exact or near-exact match via fuzzy scoring &ge; 88%).
+          Responses are stored verbatim in the local database.
+        </div>
+      </div>
+      <div class="meth-item">
+        <div class="meth-title">Run Details</div>
+        <div class="meth-text">
+          Run ID: <strong>{{ run.id }}</strong> &middot;
+          {{ query_count }} total queries across {{ model_count }} models &middot;
+          {{ company_count }} companies tracked (1 target + {{ competitor_count }} competitors).<br>
+          All raw responses are stored in the local SQLite database for audit and trend analysis.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ════════════════════════ 07 · PROMPTS USED ══════════════════════════════ #}
+  <section class="section" id="prompts-used">
+    <div class="section-header">
+      <span class="sec-num">07</span>
+      <span class="sec-title">Prompts Used</span>
+    </div>
+    <p class="sec-desc">
+      The {{ prompts_list | length }} queries sent to each model.
+      {% if prompts_list | length == 1 %}Loaded from file.{% else %}Auto-generated for topic <strong>{{ topic }}</strong>.{% endif %}
+    </p>
+
+    <ol class="prompt-list">
+      {% for prompt in prompts_list %}
+      <li class="prompt-item">{{ prompt }}</li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {# ════════════════════════ 08 · RESPONSE LOG ═══════════════════════════════ #}
+  <section class="section" id="response-log">
+    <div class="section-header">
+      <span class="sec-num">08</span>
+      <span class="sec-title">Response Log</span>
+    </div>
+    <p class="sec-desc">
+      Full model responses for every prompt. Click a row to expand.
+      <span class="mention-target" style="font-size:12px">Target</span> and
+      <span class="mention-competitor" style="font-size:12px">competitor</span> names are highlighted inline.
+    </p>
+
+    {% for entry in response_log %}
+    <details class="response-entry" data-prompt-index="{{ loop.index }}">
+      <summary class="response-summary">
+        <span class="summary-arrow">&#9654;</span>
+        <span class="summary-prompt">{{ entry.prompt }}</span>
+        <span class="mention-tags">
+          {% if entry.mentioned_companies %}
+            {% for c in entry.mentioned_companies %}
+            <span class="{{ 'tag-target' if c.is_target else 'tag-competitor' }}">{{ c.name }}</span>
+            {% endfor %}
+          {% else %}
+            <span class="tag-none">no mentions</span>
+          {% endif %}
+        </span>
+      </summary>
+
+      <div class="response-grid">
+        {% for r in entry.responses %}
+        <div class="response-model-card" data-model-id="{{ r.model_id }}">
+          <div class="response-model-header">
+            {{ r.model_label }}
+            {% for m in r.mentions %}
+            <span class="{{ 'tag-target' if m.is_target else 'tag-competitor' }}">{{ m.company_name }}</span>
+            {% endfor %}
+          </div>
+          <div class="response-text">{{ r.response_html }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+
+  {# ════════════════════════════════ FOOTER ════════════════════════════════ #}
+  <footer class="report-footer">
+    <div class="footer-co" data-report-field="company-name-footer">{{ company_name }}</div>
+    <div class="footer-meta">
+      AI SOV Report &middot; {{ period }} &middot; Confidential
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.06 });
+    document.querySelectorAll('.section').forEach(function (el) { io.observe(el); });
+  })();
+</script>
+</body>
+</html>

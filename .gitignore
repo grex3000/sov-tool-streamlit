@@ -1,0 +1,19 @@
+# Secrets — never commit
+.streamlit/secrets.toml
+.env
+
+# Generated output
+data/
+reports/
+prompts_session.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
