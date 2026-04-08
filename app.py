@@ -665,7 +665,7 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 [data-testid="stMetricValue"] { font-family: 'IBM Plex Mono', monospace !important; }
 
 .sov-watermark {
-  position: fixed; bottom: 18px; left: 22px; font-size: 10px;
+  position: fixed; bottom: 18px; right: 22px; font-size: 10px;
   font-weight: 400; color: var(--muted); letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.6; z-index: 9999; pointer-events: none;
