@@ -102,7 +102,7 @@ def _auto_period() -> str:
 
 st.set_page_config(
     page_title="AI Share of Voice",
-    page_icon="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230D9488'/></svg>",
+    page_icon="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23C8102E'/><text x='50' y='68' font-size='58' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='white'>B</text></svg>",
     layout="wide",
 )
 
@@ -110,26 +110,30 @@ st.set_page_config(
 
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --accent:       #0D9488;
-  --accent-light: #CCFBF1;
-  --accent-dim:   #0F766E;
-  --bg:           #F6F7F8;
+  --accent:       #C8102E;
+  --accent-light: #FEF0F2;
+  --accent-dim:   #A50D25;
+  --bg:           #F5F5F5;
   --surface:      #FFFFFF;
-  --text:         #18181B;
-  --muted:        #71717A;
-  --border:       #E4E4E7;
+  --text:         #0A0A0A;
+  --muted:        #767676;
+  --border:       #E0E0E0;
+  --sidebar-bg:   #111111;
+  --sidebar-text: #F0F0F0;
+  --sidebar-muted:#909090;
+  --sidebar-border:#2A2A2A;
 }
 
 html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !important; }
 
-/* Apply Outfit broadly but restore icon fonts below */
-* { font-family: 'Outfit', system-ui, sans-serif !important; }
+/* Apply DM Sans broadly but restore icon fonts below */
+* { font-family: 'DM Sans', system-ui, sans-serif !important; }
 
-/* ── Restore Streamlit icon fonts (fixes arrow_right/arrow_down text) ── */
+/* ── Restore Streamlit icon fonts ── */
 .material-symbols-rounded,
 .material-symbols-outlined,
 .material-symbols-sharp,
@@ -142,109 +146,156 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
 #MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
 
-/* ─── Sidebar ─────────────────────────────────────────── */
+/* ─── Sidebar — dark, Roland Berger nav style ──────────── */
 [data-testid="stSidebar"] {
-  background: var(--surface) !important;
-  border-right: 1px solid var(--border) !important;
+  background: var(--sidebar-bg) !important;
+  border-right: none !important;
 }
 [data-testid="stSidebar"] > div:first-child { padding: 2rem 1.25rem !important; }
 
+/* Sidebar text overrides */
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] div { color: var(--sidebar-text) !important; }
+
+[data-testid="stSidebar"] [data-testid="stTextInput"] input,
+[data-testid="stSidebar"] [data-testid="stTextArea"] textarea {
+  background: #1A1A1A !important;
+  border: 1px solid var(--sidebar-border) !important;
+  color: var(--sidebar-text) !important;
+  border-radius: 4px !important;
+}
+[data-testid="stSidebar"] [data-testid="stTextInput"] input:focus,
+[data-testid="stSidebar"] [data-testid="stTextArea"] textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(200,16,46,0.20) !important;
+  outline: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stTextInput"] label,
+[data-testid="stSidebar"] [data-testid="stTextArea"] label,
+[data-testid="stSidebar"] [data-testid="stSlider"] label {
+  color: var(--sidebar-muted) !important;
+  font-size: 11px !important; font-weight: 600 !important;
+  letter-spacing: 0.08em !important; text-transform: uppercase !important;
+}
+
+/* Sidebar multiselect */
+[data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+  background: #1A1A1A !important;
+  border: 1px solid var(--sidebar-border) !important;
+  border-radius: 4px !important; color: var(--sidebar-text) !important;
+}
+[data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(200,16,46,0.20) !important;
+}
+[data-testid="stSidebar"] [data-baseweb="tag"] {
+  background: rgba(200,16,46,0.18) !important; border-radius: 2px !important;
+}
+[data-testid="stSidebar"] [data-baseweb="tag"] span { color: #FF6B82 !important; font-size: 12px !important; }
+
+/* Sidebar slider */
+[data-testid="stSidebar"] [data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
+  background: var(--accent) !important; border-color: var(--accent) !important;
+}
+
 .sov-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted);
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--sidebar-muted);
   margin: 1.5rem 0 0.25rem; display: block;
 }
 .sov-hint {
-  font-size: 11.5px; color: var(--muted); line-height: 1.55;
+  font-size: 11.5px; color: var(--sidebar-muted); line-height: 1.55;
   margin: 0 0 8px; display: block;
 }
 
-/* ─── Inputs ──────────────────────────────────────────── */
-[data-testid="stTextInput"] input,
-[data-testid="stTextArea"] textarea {
+/* ─── Main area inputs ────────────────────────────────── */
+.main [data-testid="stTextInput"] input,
+.main [data-testid="stTextArea"] textarea {
   border: 1px solid var(--border) !important;
-  border-radius: 8px !important; font-size: 14px !important;
+  border-radius: 4px !important; font-size: 14px !important;
   color: var(--text) !important; background: var(--surface) !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
   padding: 10px 12px !important;
 }
-[data-testid="stTextInput"] input:focus,
-[data-testid="stTextArea"] textarea:focus {
+.main [data-testid="stTextInput"] input:focus,
+.main [data-testid="stTextArea"] textarea:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(13,148,136,0.12) !important;
+  box-shadow: 0 0 0 2px rgba(200,16,46,0.15) !important;
   outline: none !important;
 }
-[data-testid="stTextInput"] label,
-[data-testid="stTextArea"] label,
-[data-testid="stSlider"] label {
+.main [data-testid="stTextInput"] label,
+.main [data-testid="stTextArea"] label,
+.main [data-testid="stSlider"] label {
   font-size: 12px !important; font-weight: 500 !important;
   color: var(--muted) !important; margin-bottom: 4px !important;
 }
 
-/* ─── Multiselect ─────────────────────────────────────── */
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+/* ─── Main area multiselect ───────────────────────────── */
+.main [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
   border: 1px solid var(--border) !important;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   background: var(--surface) !important;
   font-size: 13px !important;
 }
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div:focus-within {
+.main [data-testid="stMultiSelect"] [data-baseweb="select"] > div:focus-within {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(13,148,136,0.12) !important;
+  box-shadow: 0 0 0 2px rgba(200,16,46,0.15) !important;
 }
-[data-baseweb="tag"] {
+.main [data-baseweb="tag"] {
   background: var(--accent-light) !important;
-  border-radius: 5px !important;
+  border-radius: 2px !important;
 }
-[data-baseweb="tag"] span { color: var(--accent-dim) !important; font-size: 12px !important; }
+.main [data-baseweb="tag"] span { color: var(--accent-dim) !important; font-size: 12px !important; }
 
 /* ─── Primary button (main area) ──────────────────────── */
 .main .stButton > button[kind="primary"] {
   background: var(--accent) !important; color: #fff !important;
-  border: none !important; border-radius: 10px !important;
+  border: none !important; border-radius: 4px !important;
   font-size: 14px !important; font-weight: 600 !important;
-  letter-spacing: -0.01em !important; height: 48px !important;
-  transition: background 0.15s, transform 0.1s, box-shadow 0.15s !important;
-  box-shadow: 0 1px 3px rgba(13,148,136,0.25) !important;
+  letter-spacing: 0.01em !important; height: 48px !important;
+  transition: background 0.15s, transform 0.1s !important;
+  box-shadow: none !important;
 }
 .main .stButton > button[kind="primary"]:hover {
   background: var(--accent-dim) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 16px rgba(13,148,136,0.22) !important;
 }
 .main .stButton > button[kind="primary"]:active {
-  transform: scale(0.99) translateY(0) !important; box-shadow: none !important;
+  transform: scale(0.99) translateY(0) !important;
 }
 .main .stButton > button[kind="primary"]:disabled {
-  background: #D1D5DB !important; box-shadow: none !important; transform: none !important;
+  background: #C0C0C0 !important; transform: none !important;
 }
 
-/* ─── Secondary buttons ───────────────────────────────── */
-.stButton > button[kind="secondary"] {
+/* ─── Secondary buttons (main area) ──────────────────── */
+.main .stButton > button[kind="secondary"] {
   background: var(--surface) !important; color: var(--text) !important;
-  border: 1px solid var(--border) !important; border-radius: 8px !important;
+  border: 1px solid var(--border) !important; border-radius: 4px !important;
   font-size: 13px !important; font-weight: 500 !important;
   transition: border-color 0.15s, background 0.15s !important;
 }
-.stButton > button[kind="secondary"]:hover {
-  background: var(--bg) !important; border-color: #A1A1AA !important;
+.main .stButton > button[kind="secondary"]:hover {
+  background: var(--bg) !important; border-color: #A0A0A0 !important;
 }
 
 /* ─── Download button ─────────────────────────────────── */
 .stDownloadButton > button {
-  background: var(--surface) !important; color: var(--accent) !important;
-  border: 1.5px solid var(--accent) !important; border-radius: 8px !important;
+  background: var(--accent) !important; color: #fff !important;
+  border: none !important; border-radius: 4px !important;
   font-size: 13px !important; font-weight: 600 !important;
-  transition: background 0.15s, border-color 0.15s !important;
+  letter-spacing: 0.01em !important;
+  transition: background 0.15s !important;
 }
 .stDownloadButton > button:hover {
-  background: var(--accent-light) !important; border-color: var(--accent-dim) !important;
+  background: var(--accent-dim) !important;
 }
 
 /* ─── Sidebar: + button (primary) ─────────────────────── */
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
   background: var(--accent) !important; color: #fff !important;
-  border: none !important; border-radius: 7px !important;
+  border: none !important; border-radius: 3px !important;
   height: 36px !important; min-height: 36px !important;
   padding: 0 12px !important; font-size: 18px !important;
   font-weight: 400 !important; line-height: 1 !important;
@@ -254,28 +305,29 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
   background: var(--accent-dim) !important; transform: none !important;
 }
 
-/* ─── Sidebar: × remove buttons ────────────────────────── */
+/* ─── Sidebar: × remove buttons ───────────────────────── */
 [data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-  background: transparent !important; color: var(--muted) !important;
-  border: 1px solid var(--border) !important; border-radius: 7px !important;
+  background: transparent !important; color: var(--sidebar-muted) !important;
+  border: 1px solid var(--sidebar-border) !important; border-radius: 3px !important;
   height: 36px !important; min-height: 36px !important;
   padding: 0 10px !important; font-size: 15px !important;
   font-weight: 400 !important; line-height: 1 !important;
   transition: background 0.12s, border-color 0.12s, color 0.12s !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
-  background: #FFF1F2 !important; border-color: #FECDD3 !important;
-  color: #E11D48 !important;
+  background: rgba(200,16,46,0.15) !important;
+  border-color: rgba(200,16,46,0.4) !important;
+  color: #FF6B82 !important;
 }
 
 .comp-tag {
-  font-size: 13px; font-weight: 500; color: var(--text);
+  font-size: 13px; font-weight: 400; color: var(--sidebar-text);
   padding: 8px 0 8px 2px; line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ─── Slider ──────────────────────────────────────────── */
-[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
+/* ─── Slider (main) ──────────────────────────────────── */
+.main [data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
   background: var(--accent) !important; border-color: var(--accent) !important;
 }
 
@@ -284,7 +336,7 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 
 /* ─── Expander ────────────────────────────────────────── */
 [data-testid="stExpander"] {
-  border: 1px solid var(--border) !important; border-radius: 10px !important;
+  border: 1px solid var(--border) !important; border-radius: 4px !important;
   background: var(--surface) !important; overflow: hidden !important;
 }
 [data-testid="stExpander"] summary {
@@ -295,21 +347,21 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 
 /* ─── Status / alerts ─────────────────────────────────── */
 [data-testid="stStatusWidget"], [data-testid="stStatus"] {
-  border: 1px solid var(--border) !important; border-radius: 10px !important;
+  border: 1px solid var(--border) !important; border-radius: 4px !important;
   background: var(--surface) !important; font-size: 14px !important;
 }
-[data-testid="stAlert"] { border-radius: 10px !important; font-size: 13px !important; }
+[data-testid="stAlert"] { border-radius: 4px !important; font-size: 13px !important; }
 
 /* ─── Progress bar ────────────────────────────────────── */
 [data-testid="stProgressBar"] > div > div {
-  background: var(--accent) !important; border-radius: 4px !important;
+  background: var(--accent) !important; border-radius: 0 !important;
 }
 [data-testid="stProgressBar"] > div {
-  border-radius: 4px !important; background: var(--accent-light) !important;
+  border-radius: 0 !important; background: #E8E8E8 !important;
 }
 .progress-label {
   font-size: 12px; font-weight: 500; color: var(--muted);
-  letter-spacing: 0.01em; margin-bottom: 6px;
+  letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px;
 }
 
 /* ─── Main block ──────────────────────────────────────── */
@@ -319,23 +371,47 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 }
 
 /* ─── Page header ─────────────────────────────────────── */
-.sov-header { padding-bottom: 1.75rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+.sov-header {
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.sov-logo-bar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.sov-logo-mark {
+  width: 28px; height: 28px; background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sov-logo-mark svg { width: 16px; height: 16px; }
+.sov-logo-name {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--text);
+}
+.sov-logo-divider {
+  width: 1px; height: 16px; background: var(--border); margin: 0 2px;
+}
+.sov-logo-product {
+  font-size: 11px; font-weight: 400; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
 .sov-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
 }
 .sov-badge::before {
-  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  content: ''; width: 5px; height: 5px;
   background: var(--accent); display: block;
   animation: pulse 2.4s ease-in-out infinite;
 }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.75)} }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
 .sov-title {
-  font-size: 34px; font-weight: 700; letter-spacing: -0.03em;
-  line-height: 1.1; color: var(--text); margin: 0 0 8px;
+  font-size: 36px; font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.05; color: var(--text); margin: 0 0 10px;
 }
-.sov-subtitle { font-size: 15px; color: var(--muted); margin: 0; max-width: 540px; }
+.sov-subtitle { font-size: 15px; color: var(--muted); margin: 0; max-width: 560px; line-height: 1.6; font-weight: 400; }
 
 /* ─── Step indicator ──────────────────────────────────── */
 .sov-steps {
@@ -345,85 +421,79 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 }
 .sov-step { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
 .sov-step-num {
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 22px; height: 22px;
   border: 1.5px solid var(--border); background: var(--bg);
-  color: var(--muted); font-size: 11px; font-weight: 700;
+  color: var(--muted); font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
-.sov-step-label { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
-.sov-step.active .sov-step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
-.sov-step.active .sov-step-label { color: var(--text); font-weight: 600; }
-.sov-step.done .sov-step-num { background: var(--accent-light); border-color: var(--accent-light); color: var(--accent); }
+.sov-step-label { font-size: 11.5px; font-weight: 500; color: var(--muted); white-space: nowrap; letter-spacing: 0.01em; }
+.sov-step.active .sov-step-num { background: var(--text); border-color: var(--text); color: #fff; }
+.sov-step.active .sov-step-label { color: var(--text); font-weight: 700; }
+.sov-step.done .sov-step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sov-step.done .sov-step-label { color: var(--muted); }
 .sov-connector { flex:1; min-width:12px; max-width:40px; height:1px; background:var(--border); margin:0 4px; }
 
 /* ─── Prompt review ───────────────────────────────────── */
 .prompt-review-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .prompt-count-badge {
-  font-size: 12px; font-weight: 700; color: var(--accent);
-  background: var(--accent-light); border-radius: 20px; padding: 3px 11px; white-space: nowrap;
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  background: var(--accent-light); border-radius: 2px;
+  padding: 3px 10px; white-space: nowrap; letter-spacing: 0.04em;
 }
 .prompt-review-hint { font-size: 12px; color: var(--muted); }
-
 
 /* ─── Report section ──────────────────────────────────── */
 .report-meta { flex: 1; }
 .report-meta-title { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing:-0.01em; margin:0; }
-.report-meta-file { font-size: 12px; color: var(--muted); font-family:'JetBrains Mono',monospace !important; margin-top:2px; }
+.report-meta-file { font-size: 12px; color: var(--muted); font-family:'IBM Plex Mono',monospace !important; margin-top:2px; }
 
 /* ─── Empty state ─────────────────────────────────────── */
 .sov-empty {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 72px 24px; text-align: center;
-  border: 1px dashed var(--border); border-radius: 16px;
+  border: 1px solid var(--border);
   background: var(--surface); margin-top: 2rem;
 }
 .sov-empty-icon {
-  width: 48px; height: 48px; border-radius: 12px;
-  background: var(--accent-light); display: flex;
-  align-items: center; justify-content: center; margin-bottom: 20px;
+  width: 40px; height: 40px; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
 }
 .sov-empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 8px; }
 .sov-empty-desc { font-size: 14px; color: var(--muted); margin: 0; max-width: 360px; line-height: 1.65; }
 
 /* ─── Misc ────────────────────────────────────────────── */
-[data-testid="stMetricValue"] { font-family: 'JetBrains Mono', monospace !important; }
+[data-testid="stMetricValue"] { font-family: 'IBM Plex Mono', monospace !important; }
 
 .sov-watermark {
-  position: fixed; bottom: 18px; left: 22px; font-size: 11px;
-  font-weight: 500; color: var(--muted); letter-spacing: 0.03em;
-  opacity: 0.55; z-index: 9999; pointer-events: none;
-  font-family: 'JetBrains Mono', monospace !important;
+  position: fixed; bottom: 18px; left: 22px; font-size: 10.5px;
+  font-weight: 500; color: #767676; letter-spacing: 0.05em;
+  opacity: 0.5; z-index: 9999; pointer-events: none;
+  font-family: 'IBM Plex Mono', monospace !important;
 }
+
+/* Sidebar scrollbar */
+[data-testid="stSidebar"] ::-webkit-scrollbar { width: 4px; }
+[data-testid="stSidebar"] ::-webkit-scrollbar-track { background: transparent; }
+[data-testid="stSidebar"] ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
 /* ─── Mobile ──────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Tighter page padding */
   .main .block-container {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     padding-top: 1.25rem !important;
     max-width: 100% !important;
   }
-
-  /* Smaller header text */
-  .sov-title    { font-size: 24px !important; }
+  .sov-title    { font-size: 26px !important; }
   .sov-subtitle { font-size: 13px !important; }
   .sov-badge    { font-size: 10px !important; }
   .sov-header   { padding-bottom: 1.25rem; margin-bottom: 1.25rem; }
-
-  /* Step indicator: hide connectors, wrap steps */
   .sov-steps    { flex-wrap: wrap; gap: 8px; padding: 1rem 0 1.25rem; }
   .sov-connector { display: none; }
-  .sov-step-label { font-size: 11px !important; }
-
-  /* Prompt review meta wraps */
+  .sov-step-label { font-size: 10.5px !important; }
   .prompt-review-meta { flex-wrap: wrap; gap: 6px; }
-
-  /* Report meta stack */
   .report-meta-title { font-size: 14px !important; }
   .report-meta-file  { font-size: 11px !important; }
-
-  /* Hide watermark on mobile — no room */
   .sov-watermark { display: none !important; }
 }
 </style>
@@ -612,11 +682,22 @@ def _step_indicator(active: int):
 
 st.markdown("""
 <div class="sov-header">
+  <div class="sov-logo-bar">
+    <div class="sov-logo-mark">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 2h6.5a3.5 3.5 0 0 1 0 7H3V2z" fill="white"/>
+        <path d="M3 9h5l4 5H8.5L5.5 10.5H3V14H3V9z" fill="white" opacity="0.7"/>
+      </svg>
+    </div>
+    <span class="sov-logo-name">Roland Berger</span>
+    <div class="sov-logo-divider"></div>
+    <span class="sov-logo-product">AI Share of Voice</span>
+  </div>
   <div class="sov-badge">AI Visibility Intelligence</div>
   <h1 class="sov-title">Share of Voice Scanner</h1>
   <p class="sov-subtitle">
     Track how AI models mention your brand — benchmark against competitors
-    and find where you're missing.
+    and identify gaps in your visibility.
   </p>
 </div>
 """, unsafe_allow_html=True)
