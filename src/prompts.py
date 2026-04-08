@@ -15,6 +15,10 @@ _CLARIFY_MODEL   = "openai/gpt-5.4"
 
 _GENERATE_SYSTEM = (
     "You generate diverse, realistic queries that people ask AI assistants when researching a specific topic.\n"
+    "CRITICAL RULE: Do NOT mention or name any specific company, brand, product, or vendor in the questions — "
+    "not even as examples. The questions must be entirely generic so that an AI model responds by organically "
+    "naming whoever it believes is best, without being prompted.\n"
+    "Think of questions a person would ask before they know which brand to pick, not after.\n"
     "Vary phrasing, persona, intent, geography, scale, and context.\n"
     'Return a JSON object with a single key "prompts" whose value is an array of strings.'
 )
@@ -147,6 +151,7 @@ async def auto_generate_prompts(
     api_key: str,
     brief: str = "",
     examples: list[str] | None = None,
+    exclude_names: list[str] | None = None,
 ) -> list[str]:
     """
     Ask an LLM to generate `count` varied prompts for the given topic.
@@ -169,6 +174,17 @@ async def auto_generate_prompts(
             f"\nThe user has provided these example prompts — match their angle and style:\n{ex_lines}"
         )
 
+    # Build an explicit no-name list from target + competitors
+    all_excluded = [n.strip() for n in (exclude_names or []) if n.strip()]
+    if all_excluded:
+        names_quoted = ", ".join(f'"{n}"' for n in all_excluded)
+        exclude_block = (
+            f"\nDo NOT name any of the following (or any other company/brand): {names_quoted}. "
+            "If a generated question contains any of these names, rewrite it to be fully generic."
+        )
+    else:
+        exclude_block = ""
+
     resp = await client.chat.completions.create(
         model=_GENERATE_MODEL,
         messages=[
@@ -178,14 +194,17 @@ async def auto_generate_prompts(
                 "content": (
                     f'Topic: "{topic}"{focus_block}\n'
                     f"Generate {count} varied, realistic queries a person might ask an AI assistant about this topic.\n"
+                    "IMPORTANT: Do NOT include any company names, brand names, or product names in the questions. "
+                    "Keep them fully generic — the AI that receives these questions should decide independently who to recommend.\n"
                     "Vary along these dimensions:\n"
                     "- Different personas (buyer, researcher, journalist, professional, casual user)\n"
                     "- Different intents (seeking a recommendation, comparing options, discovering what exists)\n"
-                    "- Different phrasings (direct question, 'best X', 'who/what is known for Y', 'compare A vs B')\n"
+                    "- Different phrasings (direct question, 'best X', 'who/what is known for Y')\n"
                     "- Different geographies or markets where relevant\n"
                     "- Different scale or context (large/small, premium/budget, B2B/consumer, etc.)\n"
                     "- Different levels of specificity (broad overview vs. narrow niche use case)\n"
-                    f"{examples_block}\n"
+                    f"{examples_block}"
+                    f"{exclude_block}\n"
                     "Make each query sound like something a real person would naturally type or say to an AI."
                 ),
             },

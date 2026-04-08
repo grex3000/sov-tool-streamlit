@@ -670,10 +670,12 @@ if stage == "config":
         custom_prompts = [p.strip() for p in custom_prompts_raw.splitlines() if p.strip()]
         n_to_generate  = max(0, num_prompts - len(custom_prompts))
 
+        all_names = [target_name] + list(_ss.aliases) + list(_ss.competitors)
         with st.spinner(f"Generating {n_to_generate} questions for '{topic}'…"):
             generated = _run_async(auto_generate_prompts(
                 topic=topic, count=n_to_generate, api_key=api_key,
                 brief=focus_brief, examples=custom_prompts or None,
+                exclude_names=all_names,
             )) if n_to_generate > 0 else []
 
         _ss.pending_prompts = list(dict.fromkeys(custom_prompts + generated))
