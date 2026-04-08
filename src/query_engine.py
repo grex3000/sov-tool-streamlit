@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from openai import AsyncOpenAI
 from rich.progress import (
     BarColumn,
     Progress,
-    TaskID,
     TextColumn,
     TimeElapsedColumn,
 )
@@ -38,9 +38,8 @@ async def _query_one(
     model_label: str,
     prompt: str,
     semaphore: asyncio.Semaphore,
-    progress: Progress,
-    task_id: TaskID,
 ) -> QueryResult:
+    """Execute a single prompt against one model. Returns a QueryResult (never raises)."""
     async with semaphore:
         try:
             resp = await client.chat.completions.create(
@@ -49,19 +48,15 @@ async def _query_one(
                 max_tokens=900,
                 timeout=45,
             )
-            text = resp.choices[0].message.content or ""
-            result = QueryResult(
+            return QueryResult(
                 model_id=model_id, model_label=model_label,
-                prompt=prompt, response=text,
+                prompt=prompt, response=resp.choices[0].message.content or "",
             )
         except Exception as exc:
-            result = QueryResult(
+            return QueryResult(
                 model_id=model_id, model_label=model_label,
                 prompt=prompt, response=None, error=str(exc),
             )
-        finally:
-            progress.advance(task_id)
-        return result
 
 
 async def run_queries(
@@ -69,11 +64,18 @@ async def run_queries(
     models: list[tuple[str, str]],   # [(model_id, label), ...]
     api_key: str,
     max_concurrent: int = 5,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> list[QueryResult]:
-    """Query every model for every prompt concurrently. Returns flat list of results."""
-    client = _make_client(api_key)
+    """
+    Query every model for every prompt concurrently. Returns a flat list of results.
+
+    on_progress(completed, total) is called from within the asyncio loop after each
+    request completes — safe to update a shared counter read by the calling thread.
+    """
+    client    = _make_client(api_key)
     semaphore = asyncio.Semaphore(max_concurrent)
-    total = len(prompts) * len(models)
+    total     = len(prompts) * len(models)
+    completed = [0]
 
     with Progress(
         TextColumn("  [bold cyan]{task.description}"),
@@ -81,10 +83,19 @@ async def run_queries(
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         TextColumn("({task.completed}/{task.total})"),
         TimeElapsedColumn(),
-    ) as progress:
-        task_id = progress.add_task("Querying models", total=total)
+    ) as rich_progress:
+        task_id = rich_progress.add_task("Querying models", total=total)
+
+        async def _run_one(mid: str, label: str, prompt: str) -> QueryResult:
+            result = await _query_one(client, mid, label, prompt, semaphore)
+            rich_progress.advance(task_id)
+            completed[0] += 1
+            if on_progress:
+                on_progress(completed[0], total)
+            return result
+
         coros = [
-            _query_one(client, mid, label, prompt, semaphore, progress, task_id)
+            _run_one(mid, label, prompt)
             for mid, label in models
             for prompt in prompts
         ]

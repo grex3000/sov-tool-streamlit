@@ -31,14 +31,31 @@ from src.prompts import auto_generate_prompts
 from src.query_engine import run_queries
 from src.report import generate_report
 
-# ── Async helper ──────────────────────────────────────────────────────────────
+# ── Async helpers ─────────────────────────────────────────────────────────────
 
 def _run_async(coro):
+    """Run a coroutine in a daemon thread and block until done."""
     result = [None]; exc = [None]
     def _t():
         try:    result[0] = asyncio.run(coro)
         except Exception as e: exc[0] = e
     t = threading.Thread(target=_t, daemon=True); t.start(); t.join()
+    if exc[0]: raise exc[0]
+    return result[0]
+
+
+def _run_async_polling(coro, on_tick=None, interval: float = 0.35):
+    """Run a coroutine in a daemon thread, calling on_tick() from the main thread
+    every ~interval seconds so Streamlit UI elements can update live."""
+    result = [None]; exc = [None]
+    def _t():
+        try:    result[0] = asyncio.run(coro)
+        except Exception as e: exc[0] = e
+    t = threading.Thread(target=_t, daemon=True)
+    t.start()
+    while t.is_alive():
+        if on_tick: on_tick()
+        t.join(timeout=interval)
     if exc[0]: raise exc[0]
     return result[0]
 
@@ -73,21 +90,23 @@ def _upload_gist(html: str, filename: str, token: str) -> str:
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 AVAILABLE_MODELS: list[tuple[str, str]] = [
-    ("openai/gpt-5.4",                          "GPT-5.4"),
     ("openai/gpt-4o",                           "GPT-4o"),
+    ("openai/gpt-4.5-preview",                  "GPT-4.5"),
+    ("anthropic/claude-sonnet-4-5",             "Claude Sonnet 4.5"),
     ("anthropic/claude-sonnet-4.6",             "Claude Sonnet 4.6"),
     ("anthropic/claude-opus-4",                 "Claude Opus 4"),
     ("anthropic/claude-haiku-4-5-20251001",     "Claude Haiku 4.5"),
-    ("google/gemini-3.1-pro-preview",           "Gemini 3.1 Pro"),
+    ("google/gemini-2.5-pro-preview",           "Gemini 2.5 Pro"),
     ("google/gemini-2.5-flash-preview:thinking","Gemini 2.5 Flash"),
+    ("google/gemini-2.0-flash-001",             "Gemini 2.0 Flash"),
     ("perplexity/sonar-pro",                    "Perplexity Sonar Pro"),
     ("perplexity/sonar",                        "Perplexity Sonar"),
     ("meta-llama/llama-3.3-70b-instruct",       "Llama 3.3 70B"),
 ]
 _DEFAULT_MODEL_IDS = [
-    "openai/gpt-5.4",
+    "openai/gpt-4o",
     "anthropic/claude-sonnet-4.6",
-    "google/gemini-3.1-pro-preview",
+    "google/gemini-2.5-pro-preview",
     "perplexity/sonar-pro",
 ]
 _LABEL_TO_ID = {label: mid for mid, label in AVAILABLE_MODELS}
@@ -850,14 +869,40 @@ elif stage == "scanning":
     try:
         with st.status("Running scan…", expanded=True) as status:
             real_total = len(prompt_list) * len(models_run)
-            st.write(f"Querying {len(models_run)} models — {real_total} total requests…")
-            _prog(0.15, f"Querying {len(models_run)} models × {len(prompt_list)} questions…")
+            q_done     = [0]   # shared counter updated by on_progress callback
 
-            results = _run_async(run_queries(prompt_list, models_run, api_key_run, max_concurrent=5))
-            errors  = sum(1 for r in results if r.error)
-            st.write(f"**{len(results) - errors} responses received**" +
-                     (f" — {errors} failed" if errors else ""))
-            _prog(0.75, f"{len(results) - errors}/{real_total} responses — detecting mentions…")
+            query_status = st.empty()
+            query_status.write(f"Querying {len(models_run)} models — {real_total} requests in flight…")
+            _prog(0.12, f"Starting {real_total} queries across {len(models_run)} models…")
+
+            def _on_q_progress(done: int, total: int):
+                q_done[0] = done
+
+            def _tick():
+                done = q_done[0]
+                pct  = 0.12 + (done / real_total) * 0.60  # 12 % → 72 %
+                _prog(pct, f"Querying models — {done} / {real_total} responses received…")
+
+            results = _run_async_polling(
+                run_queries(prompt_list, models_run, api_key_run,
+                            max_concurrent=5, on_progress=_on_q_progress),
+                on_tick=_tick,
+                interval=0.35,
+            )
+
+            # Per-model error breakdown
+            from collections import Counter as _Counter
+            model_errors = _Counter(r.model_label for r in results if r.error)
+            ok_count     = sum(1 for r in results if not r.error)
+
+            query_status.write(f"**{ok_count} / {real_total} responses received**")
+            if model_errors:
+                for model_label, n_err in sorted(model_errors.items()):
+                    st.warning(
+                        f"**{model_label}** — {n_err} / {len(prompt_list)} requests failed. "
+                        f"The model ID may be unavailable on OpenRouter."
+                    )
+            _prog(0.75, f"{ok_count}/{real_total} responses — detecting mentions…")
 
             st.write("Detecting brand mentions…")
             run_id = insert_run(DB_PATH, topic=topic_run, period=_auto_period())
