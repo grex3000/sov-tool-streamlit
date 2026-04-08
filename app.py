@@ -664,12 +664,7 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 /* ─── Misc ────────────────────────────────────────────── */
 [data-testid="stMetricValue"] { font-family: 'IBM Plex Mono', monospace !important; }
 
-.sov-watermark {
-  position: fixed; bottom: 18px; right: 22px; font-size: 10px;
-  font-weight: 400; color: var(--muted); letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.6; z-index: 9999; pointer-events: none;
-}
+/* watermark injected inside sidebar — no global class needed */
 
 /* Sidebar scrollbar */
 [data-testid="stSidebar"] ::-webkit-scrollbar { width: 3px; }
@@ -691,12 +686,9 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
   .prompt-review-meta { flex-wrap: wrap; gap: 6px; }
   .report-meta-title { font-size: 10px !important; }
   .report-meta-file  { font-size: 11px !important; }
-  .sov-watermark { display: none !important; }
 }
 </style>
 """, unsafe_allow_html=True)
-
-st.markdown('<div class="sov-watermark">developed by gregor.weindorf</div>', unsafe_allow_html=True)
 
 # ── Session state ─────────────────────────────────────────────────────────────
 
@@ -868,6 +860,15 @@ with st.sidebar:
         style="color:#0D9488;text-decoration:none">OpenRouter</a>.
         Reports saved locally.
       </div>
+    </div>""", unsafe_allow_html=True)
+
+    # Watermark — fixed to bottom-left of sidebar
+    st.markdown("""
+    <div style="position:fixed;bottom:16px;left:0;width:var(--sidebar-width,21rem);
+                text-align:center;font-size:9px;font-weight:600;
+                letter-spacing:0.14em;text-transform:uppercase;
+                color:#3a3a3a;pointer-events:none;z-index:99999;">
+      developed by gregor.weindorf
     </div>""", unsafe_allow_html=True)
 
 # ── Step indicator ────────────────────────────────────────────────────────────
