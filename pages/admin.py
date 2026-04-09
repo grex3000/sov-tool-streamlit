@@ -84,6 +84,7 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
 
 #MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
+[data-testid="stSidebarNav"] { display: none !important; }
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapseButton"],
 button[data-testid="baseButton-header"] { display: none !important; }

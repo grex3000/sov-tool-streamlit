@@ -259,6 +259,9 @@ html, body, .stApp, [class*="block-container"] { background-color: var(--bg) !im
 #MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
 
+/* ─── Hide auto-generated multi-page nav ──────────────── */
+[data-testid="stSidebarNav"] { display: none !important; }
+
 /* ─── Hide sidebar collapse/expand toggle ─────────────── */
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapseButton"],
@@ -868,7 +871,14 @@ with st.sidebar:
         style="color:#0D9488;text-decoration:none">OpenRouter</a>.
         Reports saved locally.
       </div>
-      <div style="font-size:9px;color:#555;letter-spacing:0.14em;text-transform:uppercase;margin-top:10px;">
+      <div style="margin-top:12px;">
+        <a href="/admin" target="_self"
+           style="font-size:9px;color:#555;letter-spacing:0.14em;text-transform:uppercase;
+                  text-decoration:none;display:inline-block;margin-bottom:6px;">
+          Admin ↗
+        </a>
+      </div>
+      <div style="font-size:9px;color:#555;letter-spacing:0.14em;text-transform:uppercase;">
         developed by gregor.weindorf
       </div>
     </div>""", unsafe_allow_html=True)
