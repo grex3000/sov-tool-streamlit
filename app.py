@@ -281,7 +281,14 @@ button[data-testid="baseButton-header"] { display: none !important; }
   border: 1px solid var(--sidebar-border) !important;
   border-radius: 0 !important;
   color: var(--sidebar-text) !important;
+  -webkit-text-fill-color: var(--sidebar-text) !important;
   font-size: 14px !important;
+  color-scheme: dark !important;
+}
+[data-testid="stSidebar"] [data-testid="stTextInput"] input::placeholder,
+[data-testid="stSidebar"] [data-testid="stTextArea"] textarea::placeholder {
+  color: #606060 !important;
+  -webkit-text-fill-color: #606060 !important;
 }
 [data-testid="stSidebar"] [data-testid="stTextInput"] input:focus,
 [data-testid="stSidebar"] [data-testid="stTextArea"] textarea:focus {
