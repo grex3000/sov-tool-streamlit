@@ -20,6 +20,7 @@ from src.db import (
     insert_mention,
     insert_query,
     insert_run,
+    insert_run_companies,
 )
 from src.detector import CompanyRef, detect_all_mentions
 from src.prompts import auto_generate_prompts
@@ -1212,6 +1213,7 @@ elif stage == "scanning":
 
             st.write("Detecting brand mentions…")
             run_id = insert_run(DB_PATH, topic=topic_run, period=_auto_period())
+            insert_run_companies(DB_PATH, run_id, companies)
             total_mentions = 0
             for r in results:
                 qid = insert_query(DB_PATH, run_id=run_id,

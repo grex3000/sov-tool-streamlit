@@ -45,6 +45,14 @@ def init_db(db_path: str) -> None:
             excerpt      TEXT,
             FOREIGN KEY (query_id) REFERENCES queries(id)
         );
+
+        CREATE TABLE IF NOT EXISTS run_companies (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id       INTEGER NOT NULL,
+            company_name TEXT    NOT NULL,
+            is_target    INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (run_id) REFERENCES runs(id)
+        );
     """)
     conn.commit()
     conn.close()
@@ -104,6 +112,62 @@ def insert_mention(
     )
     conn.commit()
     conn.close()
+
+
+def insert_run_companies(db_path: str, run_id: int, companies: list) -> None:
+    """Store target + competitor names at scan time so admin can reconstruct even with 0 mentions."""
+    conn = _connect(db_path)
+    conn.executemany(
+        "INSERT INTO run_companies (run_id, company_name, is_target) VALUES (?,?,?)",
+        [(run_id, c.name, int(c.is_target)) for c in companies],
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_companies_for_run(db_path: str, run_id: int) -> list[dict[str, Any]]:
+    """Return target + competitors for a run. Uses run_companies table; falls back to mentions for old runs."""
+    conn = _connect(db_path)
+    rows = conn.execute(
+        "SELECT company_name, is_target FROM run_companies WHERE run_id = ? ORDER BY is_target DESC, company_name",
+        (run_id,),
+    ).fetchall()
+    if not rows:
+        rows = conn.execute(
+            """SELECT DISTINCT m.company_name, m.is_target
+               FROM mentions m JOIN queries q ON m.query_id = q.id
+               WHERE q.run_id = ? ORDER BY m.is_target DESC, m.company_name""",
+            (run_id,),
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_admin_run_summary(db_path: str) -> list[dict[str, Any]]:
+    """Return one row per run with aggregate stats for the admin dashboard."""
+    conn = _connect(db_path)
+    rows = conn.execute("""
+        SELECT
+            r.id,
+            r.created_at,
+            r.topic,
+            r.period,
+            COUNT(DISTINCT q.id)       AS query_count,
+            COUNT(DISTINCT q.model_id) AS model_count,
+            COUNT(DISTINCT m.id)       AS mention_count,
+            ROUND(
+                100.0 * COUNT(DISTINCT CASE WHEN m.is_target = 1 THEN q.id END) /
+                NULLIF(COUNT(DISTINCT q.id), 0),
+                1
+            ) AS target_sov_pct
+        FROM runs r
+        LEFT JOIN queries q ON q.run_id = r.id
+        LEFT JOIN mentions m ON m.query_id = q.id
+        GROUP BY r.id
+        ORDER BY r.created_at DESC
+    """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def get_run(db_path: str, run_id: int) -> dict[str, Any]:
