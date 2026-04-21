@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from src.config import CompanyEntry
 from src.source_extractor import SourceCitation, _match_company, _parse_domain, extract_sources
 
@@ -21,6 +20,10 @@ def test_parse_domain_no_www():
 
 def test_parse_domain_invalid_returns_input():
     assert _parse_domain("not-a-url") == "not-a-url"
+
+
+def test_parse_domain_cctld():
+    assert _parse_domain("https://www.bbc.co.uk/news") == "bbc.co.uk"
 
 
 def test_match_company_finds_mckinsey():

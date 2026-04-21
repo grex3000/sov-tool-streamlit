@@ -8,6 +8,8 @@ from src.config import CompanyEntry
 
 _URL_RE = re.compile(r'https?://[^\s\)\]"\'<>]+')
 
+_TWO_PART_TLDS = {"co", "com", "org", "net", "gov", "ac", "edu"}
+
 _TEXT_PATTERN_TEMPLATES = [
     r'\baccording to\s+{name}',
     r'\bsource:\s+{name}',
@@ -31,10 +33,12 @@ class SourceCitation:
 def _parse_domain(url: str) -> str:
     """Return SLD+TLD from a URL, e.g. 'https://www.mckinsey.com/a' → 'mckinsey.com'."""
     try:
-        host = urlparse(url).netloc
+        host = urlparse(url).netloc.split(":")[0]  # strip port
         if not host:
             return url
         parts = host.split(".")
+        if len(parts) >= 3 and parts[-2] in _TWO_PART_TLDS:
+            return ".".join(parts[-3:])
         return ".".join(parts[-2:]) if len(parts) >= 2 else host
     except Exception:
         return url
