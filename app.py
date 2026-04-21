@@ -752,6 +752,7 @@ _init = {
     "report_html":      None,
     "report_path":      None,
     "source_citations": [],
+    "score_sentiment":  True,
     "pending_prompts":  [],
     "pending_config":   {},
     "prompt_ver":       0,
@@ -906,6 +907,12 @@ with st.sidebar:
         f'<div style="font-size:11px;color:#71717A;margin-top:2px">'
         f'~{n_est} total API requests</div>',
         unsafe_allow_html=True,
+    )
+
+    _ss.score_sentiment = st.toggle(
+        "Score sentiment",
+        value=_ss.score_sentiment,
+        help="Adds ~5–10s post-scan: scores each brand mention as positive, neutral, or negative using GPT-4o-mini.",
     )
 
     st.markdown("""
@@ -1332,10 +1339,10 @@ elif stage == "scanning":
             mentions   = get_mentions_for_run(DB_PATH, run_id)
             run_record = get_run(DB_PATH, run_id)
 
-            if mentions:
+            if mentions and _ss.get("score_sentiment", True):
                 _run_async(score_sentiments(queries, mentions, api_key_run))
 
-            _prog(0.94, "Sentiment scored — building report…")
+            _prog(0.94, "Sentiment scored — building report…" if _ss.get("score_sentiment", True) else "Building report…")
             st.write("Generating report…")
 
             _ss.source_citations = all_source_citations
