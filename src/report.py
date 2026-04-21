@@ -153,6 +153,17 @@ def compute_sov(
             }
 
         avg = round(sum(model_pcts) / len(model_pcts), 1) if model_pcts else 0.0
+
+        # Sentiment aggregation (populated when score_sentiments() has run)
+        sent = {"positive": 0, "neutral": 0, "negative": 0}
+        for m in mentions:
+            if m["company_name"] == company.name:
+                s = m.get("sentiment", "neutral")
+                if s in sent:
+                    sent[s] += 1
+        sent_total = sum(sent.values())
+        dominant = max(sent, key=sent.__getitem__) if sent_total else "neutral"
+
         results.append(
             {
                 "name": company.name,
@@ -160,6 +171,7 @@ def compute_sov(
                 "avg_sov": avg,
                 "score_class": score_class(avg),
                 "by_model": by_model,
+                "sentiment": {**sent, "total": sent_total, "dominant": dominant},
             }
         )
 

@@ -23,6 +23,7 @@ from src.db import (
     insert_run_companies,
 )
 from src.detector import CompanyRef, detect_all_mentions
+from src.sentiment import score_sentiments
 from src.source_extractor import extract_sources
 from src.prompts import auto_generate_prompts
 from src.query_engine import run_queries
@@ -1325,12 +1326,17 @@ elif stage == "scanning":
                     f"Try adding aliases or refining the topic.",
                 ), unsafe_allow_html=True)
 
-            _prog(0.88, "Mentions detected — building report…")
+            _prog(0.88, "Mentions detected — scoring sentiment…")
 
-            st.write("Generating report…")
             queries    = get_queries_for_run(DB_PATH, run_id)
             mentions   = get_mentions_for_run(DB_PATH, run_id)
             run_record = get_run(DB_PATH, run_id)
+
+            if mentions:
+                _run_async(score_sentiments(queries, mentions, api_key_run))
+
+            _prog(0.94, "Sentiment scored — building report…")
+            st.write("Generating report…")
 
             _ss.source_citations = all_source_citations
             report_path = generate_report(

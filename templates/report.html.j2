@@ -126,6 +126,16 @@
     .company-cell-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .score-cell { text-align: center; }
     .avg-col { border-left: 2px solid var(--border) !important; font-family: var(--mono); font-size: 13px; font-weight: 600; text-align: center; }
+    .sentiment-col { border-left: 2px solid var(--border) !important; text-align: center; min-width: 100px; }
+    .sentiment-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+    .sentiment-positive { background: #dcfce7; color: #166534; }
+    .sentiment-neutral  { background: var(--slate-light); color: #475569; }
+    .sentiment-negative { background: #fee2e2; color: #991b1b; }
+    .sentiment-sub { font-size: 10px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+    .sentiment-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; vertical-align: middle; flex-shrink: 0; }
+    .sentiment-dot.positive { background: #22c55e; }
+    .sentiment-dot.neutral  { background: #94a3b8; }
+    .sentiment-dot.negative { background: #ef4444; }
     .matrix-table tfoot td {
       background: var(--bg); font-family: var(--mono); font-size: 12px; font-weight: 600;
       text-align: center; padding: 12px 14px; color: var(--muted);
@@ -417,6 +427,7 @@
           <th class="center" data-model-id="{{ m.id }}">{{ m.label }}</th>
           {% endfor %}
           <th class="center avg-col">Avg.</th>
+          <th class="center sentiment-col">Sentiment</th>
         </tr>
       </thead>
       <tbody>
@@ -448,6 +459,18 @@
           </td>
           {% endfor %}
           <td class="avg-col" data-company-avg="{{ company.name }}">{{ company.avg_sov }}%</td>
+          <td class="sentiment-col">
+            {% if company.sentiment.total > 0 %}
+            <span class="sentiment-badge sentiment-{{ company.sentiment.dominant }}">
+              {{ company.sentiment.dominant | capitalize }}
+            </span>
+            <div class="sentiment-sub">
+              {{ company.sentiment.positive }}↑ {{ company.sentiment.neutral }}→ {{ company.sentiment.negative }}↓
+            </div>
+            {% else %}
+            <span class="sentiment-sub">—</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -458,6 +481,7 @@
           <td data-model-id="{{ m.id }}">{{ (query_count // model_count) if model_count else 0 }}</td>
           {% endfor %}
           <td class="grand-avg avg-col" data-report-field="total-queries">{{ query_count }}</td>
+          <td class="sentiment-col"></td>
         </tr>
       </tfoot>
     </table>
@@ -821,7 +845,9 @@
           <div class="response-model-header">
             {{ r.model_label }}
             {% for m in r.mentions %}
-            <span class="{{ 'tag-target' if m.is_target else 'tag-competitor' }}">{{ m.company_name }}</span>
+            <span class="{{ 'tag-target' if m.is_target else 'tag-competitor' }}">
+              {{ m.company_name }}<span class="sentiment-dot {{ m.get('sentiment', 'neutral') }}"></span>
+            </span>
             {% endfor %}
           </div>
           <div class="response-text">{{ r.response_html }}</div>
