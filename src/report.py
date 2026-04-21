@@ -466,8 +466,7 @@ def _build_response_log(
 
     # Attach per-response source citations
     if source_citations:
-        from collections import defaultdict as _dd
-        src_index: dict[tuple[str, str], list] = _dd(list)
+        src_index: dict[tuple[str, str], list] = defaultdict(list)
         for sc in source_citations:
             src_index[(sc.query_prompt, sc.model_id)].append(sc)
 
