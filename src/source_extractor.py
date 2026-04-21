@@ -50,6 +50,7 @@ def _match_company(text: str, companies: list[CompanyEntry]) -> str | None:
     for company in companies:
         for token in [company.name] + company.aliases:
             stem = token.lower().replace(" ", "").replace("-", "").replace("&", "").replace(",", "")
+            # minimum 3 to support 3-char firm aliases such as BCG and PwC
             if len(stem) >= 3 and stem in normalized:
                 return company.name
     return None
@@ -101,6 +102,7 @@ def extract_sources(
     # 3. Text-pattern company name mentions
     for company in companies:
         for name in [company.name] + company.aliases:
+            # skip names shorter than 3 chars (same threshold as _match_company)
             if len(name) < 3:
                 continue
             matched = False
