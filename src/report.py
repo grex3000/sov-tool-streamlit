@@ -399,6 +399,7 @@ def _build_response_log(
     queries: list[dict],
     mentions: list[dict],
     companies: list[CompanyEntry],
+    source_citations: list | None = None,
 ) -> list[dict]:
     """
     Return one entry per unique prompt, each containing per-model responses
@@ -463,6 +464,21 @@ def _build_response_log(
             {"name": name, "is_target": is_tgt} for name, is_tgt in seen.items()
         ]
 
+    # Attach per-response source citations
+    if source_citations:
+        from collections import defaultdict as _dd
+        src_index: dict[tuple[str, str], list] = _dd(list)
+        for sc in source_citations:
+            src_index[(sc.query_prompt, sc.model_id)].append(sc)
+
+        for entry in entries:
+            for r in entry["responses"]:
+                r["sources"] = src_index.get((entry["prompt"], r["model_id"]), [])
+    else:
+        for entry in entries:
+            for r in entry["responses"]:
+                r["sources"] = []
+
     return entries
 
 
@@ -475,6 +491,7 @@ def generate_report(
     companies: list[CompanyEntry],
     template_path: str,
     output_dir: str,
+    source_citations: list | None = None,
 ) -> str:
     """Render the HTML report and save to output_dir. Returns the output file path."""
     sov = compute_sov(queries, mentions, companies)
@@ -489,7 +506,8 @@ def generate_report(
     )
     template = env.get_template(Path(template_path).name)
 
-    response_log = _build_response_log(queries, mentions, companies)
+    response_log = _build_response_log(queries, mentions, companies, source_citations)
+    domain_stats = compute_domain_stats(source_citations or [])
 
     html = template.render(
         company_name=next((c.name for c in companies if c.is_target), "—"),
@@ -512,6 +530,8 @@ def generate_report(
         citations=sov["citations"],
         # GAP analysis
         gap=gap,
+        domain_stats=domain_stats,
+        source_citations=source_citations or [],
         # Appendix
         prompts_list=[e["prompt"] for e in response_log],
         response_log=response_log,
