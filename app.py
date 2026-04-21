@@ -23,6 +23,7 @@ from src.db import (
     insert_run_companies,
 )
 from src.detector import CompanyRef, detect_all_mentions
+from src.source_extractor import extract_sources
 from src.prompts import auto_generate_prompts
 from src.query_engine import run_queries
 from src.report import generate_report
@@ -708,6 +709,7 @@ _init = {
     "app_stage":        "config",
     "report_html":      None,
     "report_path":      None,
+    "source_citations": [],
     "pending_prompts":  [],
     "pending_config":   {},
     "prompt_ver":       0,
@@ -1225,6 +1227,7 @@ elif stage == "scanning":
             run_id = insert_run(DB_PATH, topic=topic_run, period=_auto_period())
             insert_run_companies(DB_PATH, run_id, companies)
             total_mentions = 0
+            all_source_citations = []
             for r in results:
                 qid = insert_query(DB_PATH, run_id=run_id,
                                    model_id=r.model_id, model_label=r.model_label,
@@ -1236,6 +1239,30 @@ elif stage == "scanning":
                         insert_mention(DB_PATH, query_id=qid,
                                        company_name=hit["company_name"], is_target=hit["is_target"],
                                        match_type=hit["type"], excerpt=hit["excerpt"])
+
+                    src_hits = extract_sources(
+                        response_text=r.response,
+                        structured_urls=r.citations,
+                        companies=companies,
+                        query_prompt=r.prompt,
+                        model_id=r.model_id,
+                        model_label=r.model_label,
+                    )
+                    all_source_citations.extend(src_hits)
+                    for sc in src_hits:
+                        if sc.company_match:
+                            company_obj = next(
+                                (c for c in companies if c.name == sc.company_match), None
+                            )
+                            if company_obj:
+                                insert_mention(
+                                    DB_PATH, query_id=qid,
+                                    company_name=sc.company_match,
+                                    is_target=company_obj.is_target,
+                                    match_type="source_citation",
+                                    excerpt=sc.url or sc.domain,
+                                )
+                                total_mentions += 1
 
             if total_mentions == 0:
                 st.markdown(_warning_html(
@@ -1254,9 +1281,11 @@ elif stage == "scanning":
             mentions   = get_mentions_for_run(DB_PATH, run_id)
             run_record = get_run(DB_PATH, run_id)
 
+            _ss.source_citations = all_source_citations
             report_path = generate_report(
                 run=run_record, queries=queries, mentions=mentions, companies=companies,
                 template_path=TEMPLATE_PATH, output_dir=REPORTS_DIR,
+                source_citations=all_source_citations,
             )
             _ss.report_html      = pathlib.Path(report_path).read_text(encoding="utf-8")
             _ss.report_path      = report_path
