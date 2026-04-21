@@ -62,26 +62,32 @@ def _run_async_polling(coro, on_tick=None, interval: float = 0.35):
 
 AVAILABLE_MODELS: list[tuple[str, str]] = [
     # OpenAI
-    ("openai/gpt-5.4",                         "GPT-5.4"),
-    ("openai/gpt-4o",                          "GPT-4o"),
+    ("openai/gpt-5.4",                              "GPT-5.4"),
+    ("openai/gpt-4o",                               "GPT-4o"),
+    ("openai/gpt-4o:online",                        "GPT-4o (web)"),
     # Anthropic
-    ("anthropic/claude-opus-4",                "Claude Opus 4"),
-    ("anthropic/claude-sonnet-4.6",            "Claude Sonnet 4.6"),
-    ("anthropic/claude-sonnet-4.5",            "Claude Sonnet 4.5"),
-    ("anthropic/claude-haiku-4.5",             "Claude Haiku 4.5"),
+    ("anthropic/claude-opus-4",                     "Claude Opus 4"),
+    ("anthropic/claude-sonnet-4.6",                 "Claude Sonnet 4.6"),
+    ("anthropic/claude-sonnet-4.6:online",          "Claude Sonnet 4.6 (web)"),
+    ("anthropic/claude-sonnet-4.5",                 "Claude Sonnet 4.5"),
+    ("anthropic/claude-haiku-4.5",                  "Claude Haiku 4.5"),
     # Google
-    ("google/gemini-2.5-pro-preview",          "Gemini 2.5 Pro"),
-    ("google/gemini-2.5-flash",                "Gemini 2.5 Flash"),
-    ("google/gemini-2.0-flash-001",            "Gemini 2.0 Flash"),
-    # Perplexity
-    ("perplexity/sonar-pro",                   "Perplexity Sonar Pro"),
-    ("perplexity/sonar",                       "Perplexity Sonar"),
+    ("google/gemini-2.5-pro-preview",               "Gemini 2.5 Pro"),
+    ("google/gemini-2.5-flash",                     "Gemini 2.5 Flash"),
+    ("google/gemini-2.5-flash:online",              "Gemini 2.5 Flash (web)"),
+    ("google/gemini-2.0-flash-001",                 "Gemini 2.0 Flash"),
+    # Perplexity — web-native, no :online needed
+    ("perplexity/sonar-pro",                        "Perplexity Sonar Pro"),
+    ("perplexity/sonar",                            "Perplexity Sonar"),
     # Meta
-    ("meta-llama/llama-3.3-70b-instruct",      "Llama 3.3 70B"),
+    ("meta-llama/llama-3.3-70b-instruct",           "Llama 3.3 70B"),
+    ("meta-llama/llama-3.3-70b-instruct:online",    "Llama 3.3 70B (web)"),
     # X.AI
-    ("x-ai/grok-3",                            "Grok-3"),
+    ("x-ai/grok-3",                                 "Grok-3"),
+    ("x-ai/grok-3:online",                          "Grok-3 (web)"),
     # Mistral
-    ("mistralai/mistral-large",                "Mistral Large"),
+    ("mistralai/mistral-large",                     "Mistral Large"),
+    ("mistralai/mistral-large:online",              "Mistral Large (web)"),
 ]
 _DEFAULT_MODEL_IDS = [
     "openai/gpt-4o",

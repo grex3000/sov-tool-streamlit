@@ -53,9 +53,22 @@ async def _query_one(
             # separate field — fall back to empty string so we at least store the
             # query without crashing; the per-model error counter handles the 0%.
             content = resp.choices[0].message.content
-            raw_citations = []
+            raw_citations: list[str] = []
+
+            # Perplexity: top-level citations array in response model_extra
             if hasattr(resp, "model_extra") and resp.model_extra:
                 raw_citations = [str(u) for u in resp.model_extra.get("citations", []) if u]
+
+            # :online models: annotations on the message object
+            # Format: [{type: "url_citation", url_citation: {url, title, ...}}, ...]
+            msg = resp.choices[0].message
+            msg_extra = getattr(msg, "model_extra", None) or {}
+            for ann in msg_extra.get("annotations", []):
+                if isinstance(ann, dict) and ann.get("type") == "url_citation":
+                    url = (ann.get("url_citation") or {}).get("url") or ann.get("url", "")
+                    if url and url not in raw_citations:
+                        raw_citations.append(str(url))
+
             return QueryResult(
                 model_id=model_id, model_label=model_label,
                 prompt=prompt, response=content if content else "",
