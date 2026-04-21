@@ -405,6 +405,158 @@ def compute_gap_analysis(
     }
 
 
+# ─── Sentiment analysis ───────────────────────────────────────────────────────
+
+def _sentiment_insights(company_data: list[dict]) -> list[str]:
+    insights: list[str] = []
+    target = next((c for c in company_data if c["is_target"]), None)
+    competitors = [c for c in company_data if not c["is_target"]]
+
+    if not target:
+        return insights
+
+    # Overall target framing
+    if target["pos_pct"] >= 50:
+        insights.append(
+            f"<strong>{target['name']}</strong> receives predominantly positive AI framing — "
+            f"{target['pos_pct']}% of mentions portray the brand favourably."
+        )
+    elif target["neg_pct"] >= 40:
+        insights.append(
+            f"<strong>{target['name']}</strong> faces reputational risk in AI outputs — "
+            f"{target['neg_pct']}% of mentions carry negative framing."
+        )
+    else:
+        insights.append(
+            f"<strong>{target['name']}</strong> is mentioned neutrally in {target['neu_pct']}% "
+            f"of cases — significant room to build a stronger positive narrative."
+        )
+
+    # Best / worst model for target
+    if target["by_model"]:
+        best = max(target["by_model"].items(), key=lambda x: x[1]["pos_pct"])
+        worst = max(target["by_model"].items(), key=lambda x: x[1]["neg_pct"])
+        if best[1]["pos_pct"] > 0:
+            insights.append(
+                f"<strong>{best[0]}</strong> is the most favourable model for {target['name']} "
+                f"({best[1]['pos_pct']}% positive mentions)."
+            )
+        if worst[1]["neg_pct"] > 0 and worst[0] != best[0]:
+            insights.append(
+                f"<strong>{worst[0]}</strong> shows the most critical framing "
+                f"({worst[1]['neg_pct']}% negative) — worth auditing content indexed by this model."
+            )
+
+    # Target vs competitors on sentiment
+    if competitors:
+        more_positive = [c for c in competitors if c["pos_pct"] > target["pos_pct"]]
+        if more_positive:
+            names = ", ".join(f"<strong>{c['name']}</strong>" for c in more_positive)
+            verb = "receives" if len(more_positive) == 1 else "receive"
+            insights.append(
+                f"{names} {verb} more positive AI framing than {target['name']} — "
+                f"review their content and thought-leadership strategy for signals."
+            )
+        else:
+            insights.append(
+                f"{target['name']} leads on positive sentiment among all tracked companies — "
+                f"reinforce this through continued thought leadership and PR."
+            )
+
+    return insights
+
+
+def compute_sentiment_analysis(
+    mentions: list[dict],
+    companies: "list[CompanyEntry]",
+) -> dict | None:
+    """
+    Returns structured sentiment data for the report template, or None if
+    sentiment scoring was not run (no 'sentiment' key on any mention).
+    """
+    if not any("sentiment" in m for m in mentions):
+        return None
+
+    company_data: list[dict] = []
+    for company in companies:
+        comp_mentions = [
+            m for m in mentions
+            if m["company_name"] == company.name and "sentiment" in m
+        ]
+        if not comp_mentions:
+            continue
+
+        sent = {"positive": 0, "neutral": 0, "negative": 0}
+        by_model: dict[str, dict] = {}
+
+        for m in comp_mentions:
+            s = m.get("sentiment", "neutral")
+            if s in sent:
+                sent[s] += 1
+            ml = m.get("model_label") or m.get("model_id", "Unknown")
+            if ml not in by_model:
+                by_model[ml] = {"positive": 0, "neutral": 0, "negative": 0}
+            if s in by_model[ml]:
+                by_model[ml][s] += 1
+
+        total = sum(sent.values())
+        pos_pct = round(sent["positive"] / total * 100) if total else 0
+        neg_pct = round(sent["negative"] / total * 100) if total else 0
+        neu_pct = 100 - pos_pct - neg_pct
+
+        model_summary: dict[str, dict] = {}
+        for ml, counts in by_model.items():
+            mtotal = sum(counts.values())
+            dominant = max(counts, key=counts.__getitem__) if mtotal else "neutral"
+            model_summary[ml] = {
+                **counts,
+                "total": mtotal,
+                "dominant": dominant,
+                "pos_pct": round(counts["positive"] / mtotal * 100) if mtotal else 0,
+                "neg_pct": round(counts["negative"] / mtotal * 100) if mtotal else 0,
+            }
+
+        dominant = max(sent, key=sent.__getitem__) if total else "neutral"
+
+        best_excerpt = next(
+            (m["excerpt"] for m in comp_mentions
+             if m.get("sentiment") == "positive" and len(m.get("excerpt", "")) > 50),
+            None,
+        )
+        worst_excerpt = next(
+            (m["excerpt"] for m in comp_mentions
+             if m.get("sentiment") == "negative" and len(m.get("excerpt", "")) > 50),
+            None,
+        )
+
+        company_data.append({
+            "name": company.name,
+            "is_target": company.is_target,
+            "positive": sent["positive"],
+            "neutral": sent["neutral"],
+            "negative": sent["negative"],
+            "total": total,
+            "pos_pct": pos_pct,
+            "neu_pct": neu_pct,
+            "neg_pct": neg_pct,
+            "dominant": dominant,
+            "by_model": model_summary,
+            "best_excerpt": best_excerpt,
+            "worst_excerpt": worst_excerpt,
+        })
+
+    if not company_data:
+        return None
+
+    # Target first, then sorted by positivity
+    company_data.sort(key=lambda x: (not x["is_target"], -(x["pos_pct"] - x["neg_pct"])))
+
+    return {
+        "by_company": company_data,
+        "insights": _sentiment_insights(company_data),
+    }
+
+
 # ─── Response log ─────────────────────────────────────────────────────────────
 
 def _build_response_log(
@@ -507,6 +659,7 @@ def generate_report(
     """Render the HTML report and save to output_dir. Returns the output file path."""
     sov = compute_sov(queries, mentions, companies)
     gap = compute_gap_analysis(queries, mentions, companies)
+    sentiment_analysis = compute_sentiment_analysis(mentions, companies)
 
     target = sov["target"]
     competitor_count = sum(1 for c in sov["companies"] if not c["is_target"])
@@ -543,6 +696,8 @@ def generate_report(
         gap=gap,
         domain_stats=domain_stats,
         source_citations=source_citations or [],
+        # Sentiment analysis
+        sentiment_analysis=sentiment_analysis,
         # Appendix
         prompts_list=[e["prompt"] for e in response_log],
         response_log=response_log,
