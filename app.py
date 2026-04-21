@@ -173,6 +173,47 @@ def _warning_html(label: str, detail: str) -> str:
       <div style="font-size:13px;color:#78350f;line-height:1.55;">{detail}</div>
     </div>"""
 
+
+def _build_sources_csv(source_citations: list) -> str:
+    """Return sources as a UTF-8 CSV string."""
+    import csv
+    import io
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["query", "model", "domain", "url", "match_type", "company_match"])
+    for sc in source_citations:
+        writer.writerow([
+            sc.query_prompt,
+            sc.model_label,
+            sc.domain,
+            sc.url,
+            sc.match_type,
+            sc.company_match or "",
+        ])
+    return buf.getvalue()
+
+
+def _build_sources_excel(source_citations: list) -> bytes:
+    """Return sources as an in-memory Excel (.xlsx) file."""
+    import io
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sources"
+    ws.append(["Query", "Model", "Domain", "URL", "Match Type", "Company Match"])
+    for sc in source_citations:
+        ws.append([
+            sc.query_prompt,
+            sc.model_label,
+            sc.domain,
+            sc.url,
+            sc.match_type,
+            sc.company_match or "",
+        ])
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
 # ── Page config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
@@ -1031,15 +1072,34 @@ if stage == "config":
         </div>""", unsafe_allow_html=True)
 
         st.write("")
-        col_dl, col_new = st.columns(2)
+        col_dl, col_csv, col_xlsx, col_new = st.columns(4)
         with col_dl:
             st.download_button("Download Report", data=_ss.report_html,
                                file_name=report_name, mime="text/html",
                                use_container_width=True)
+        with col_csv:
+            if _ss.source_citations:
+                st.download_button(
+                    "Export Sources (CSV)",
+                    data=_build_sources_csv(_ss.source_citations),
+                    file_name=report_name.replace(".html", "-sources.csv"),
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+        with col_xlsx:
+            if _ss.source_citations:
+                st.download_button(
+                    "Export Sources (Excel)",
+                    data=_build_sources_excel(_ss.source_citations),
+                    file_name=report_name.replace(".html", "-sources.xlsx"),
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
         with col_new:
             if st.button("New Scan", type="primary", use_container_width=True):
                 _ss.report_html = None
                 _ss.report_path = None
+                _ss.source_citations = []
                 st.rerun()
 
     elif can_generate:
