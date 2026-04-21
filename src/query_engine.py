@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from openai import AsyncOpenAI
 from rich.progress import (
@@ -22,6 +22,7 @@ class QueryResult:
     prompt: str
     response: str | None
     error: str | None = None
+    citations: list[str] = field(default_factory=list)
 
 
 def _make_client(api_key: str) -> AsyncOpenAI:
@@ -52,9 +53,13 @@ async def _query_one(
             # separate field — fall back to empty string so we at least store the
             # query without crashing; the per-model error counter handles the 0%.
             content = resp.choices[0].message.content
+            raw_citations = []
+            if hasattr(resp, "model_extra") and resp.model_extra:
+                raw_citations = [str(u) for u in resp.model_extra.get("citations", []) if u]
             return QueryResult(
                 model_id=model_id, model_label=model_label,
                 prompt=prompt, response=content if content else "",
+                citations=raw_citations,
             )
         except Exception as exc:
             return QueryResult(
