@@ -308,6 +308,29 @@
       .company-name { font-size: 26px; }
       .bar-row { grid-template-columns: 100px 1fr 50px; }
     }
+    /* ── Source Citations ─────────────────────────────── */
+    .source-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .source-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .source-tag a { color: var(--accent); text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
+    .source-tag a:hover { text-decoration: underline; }
+    .source-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 5px; border-radius: 2px; }
+    .source-badge.structured { background: #dbeafe; color: #1e40af; }
+    .source-badge.url        { background: var(--accent-light); color: var(--accent-dim); }
+    .source-badge.text_pattern { background: #f3e8ff; color: #7c3aed; }
+    .domain-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; }
+    .domain-table th { padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--border); }
+    .domain-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .domain-table tbody tr:last-child td { border-bottom: none; }
+    .domain-table tbody tr:hover td { background: rgba(0,0,0,.018); }
+    .domain-count { font-family: var(--mono); font-weight: 600; color: var(--text); }
+    .domain-company { font-size: 11px; font-weight: 600; padding: 2px 7px; }
+    .domain-company.is-target { background: #dcfce7; color: #166534; }
+    .domain-company.is-competitor { background: var(--accent-light); color: var(--accent-dim); }
+    .domain-tabs { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+    .domain-tab { padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .domain-tab.active { color: var(--text); border-bottom-color: var(--text); }
+    .domain-panel { display: none; }
+    .domain-panel.active { display: block; }
   </style>
 </head>
 <body>
@@ -599,6 +622,69 @@
   </section>
   {% endif %}
 
+  {# ════════════════════════ 04b · SOURCE DOMAINS ════════════════════════════ #}
+  {% if domain_stats and domain_stats.aggregate %}
+  <section class="section" id="source-domains">
+    <div class="section-header">
+      <span class="sec-num">04b</span>
+      <span class="sec-title">Source Domains</span>
+    </div>
+    <p class="sec-desc">
+      Domains and publications cited by AI models when answering the queries.
+      Company-matched domains are highlighted.
+    </p>
+
+    <div class="domain-tabs" id="domain-tabs">
+      <button class="domain-tab active" data-panel="aggregate" onclick="switchDomainTab(this)">All Models</button>
+      {% for mid, data in domain_stats.by_model.items() %}
+      <button class="domain-tab" data-panel="{{ mid }}" onclick="switchDomainTab(this)">{{ data.label }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="domain-panel active" id="dp-aggregate">
+      <table class="domain-table">
+        <thead><tr><th>Domain</th><th>Company</th><th style="text-align:right">Citations</th></tr></thead>
+        <tbody>
+          {% for entry in domain_stats.aggregate %}
+          <tr>
+            <td>{{ entry.domain }}</td>
+            <td>
+              {% if entry.company_match %}
+              {% set is_tgt = companies | selectattr('name', 'equalto', entry.company_match) | map(attribute='is_target') | first | default(false) %}
+              <span class="domain-company {{ 'is-target' if is_tgt else 'is-competitor' }}">{{ entry.company_match }}</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right"><span class="domain-count">{{ entry.count }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% for mid, data in domain_stats.by_model.items() %}
+    <div class="domain-panel" id="dp-{{ mid }}">
+      <table class="domain-table">
+        <thead><tr><th>Domain</th><th>Company</th><th style="text-align:right">Citations</th></tr></thead>
+        <tbody>
+          {% for entry in data.domains %}
+          <tr>
+            <td>{{ entry.domain }}</td>
+            <td>
+              {% if entry.company_match %}
+              {% set is_tgt = companies | selectattr('name', 'equalto', entry.company_match) | map(attribute='is_target') | first | default(false) %}
+              <span class="domain-company {{ 'is-target' if is_tgt else 'is-competitor' }}">{{ entry.company_match }}</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right"><span class="domain-count">{{ entry.count }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
   {# ════════════════════════ 05 · EXAMPLE CITATIONS ═════════════════════════ #}
   <section class="section" id="citations">
     <div class="section-header">
@@ -739,6 +825,20 @@
             {% endfor %}
           </div>
           <div class="response-text">{{ r.response_html }}</div>
+          {% if r.sources %}
+          <div class="source-list">
+            {% for s in r.sources %}
+            <span class="source-tag">
+              <span class="source-badge {{ s.match_type }}">{{ s.match_type | replace('_', ' ') }}</span>
+              {% if s.url %}
+              <a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.domain }}</a>
+              {% else %}
+              <span>{{ s.domain }}</span>
+              {% endif %}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
@@ -765,6 +865,17 @@
     }, { threshold: 0.06 });
     document.querySelectorAll('.section').forEach(function (el) { io.observe(el); });
   })();
+</script>
+<script>
+function switchDomainTab(btn) {
+  const tabs = document.querySelectorAll('#domain-tabs .domain-tab');
+  const panels = document.querySelectorAll('#source-domains .domain-panel');
+  tabs.forEach(t => t.classList.remove('active'));
+  panels.forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const target = document.getElementById('dp-' + btn.dataset.panel);
+  if (target) target.classList.add('active');
+}
 </script>
 </body>
 </html>
