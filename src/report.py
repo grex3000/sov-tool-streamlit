@@ -23,6 +23,44 @@ def score_class(pct: float) -> str:
     return "score-low"
 
 
+def compute_domain_stats(source_citations: list) -> dict:
+    """
+    Aggregate source citations by domain for report display.
+
+    Returns:
+    {
+      "aggregate": [{"domain", "count", "company_match"}, ...],  # top 10, sorted by count
+      "by_model": {model_id: {"label": str, "domains": [{"domain", "count", "company_match"}, ...]}}
+    }
+    """
+    agg: dict[str, dict] = {}
+    by_model: dict[str, dict] = {}
+
+    for c in source_citations:
+        if c.domain not in agg:
+            agg[c.domain] = {"domain": c.domain, "count": 0, "company_match": c.company_match}
+        agg[c.domain]["count"] += 1
+
+        if c.model_id not in by_model:
+            by_model[c.model_id] = {"label": c.model_label, "domains": {}}
+        model_domains = by_model[c.model_id]["domains"]
+        if c.domain not in model_domains:
+            model_domains[c.domain] = {"domain": c.domain, "count": 0, "company_match": c.company_match}
+        model_domains[c.domain]["count"] += 1
+
+    aggregate = sorted(agg.values(), key=lambda x: x["count"], reverse=True)[:10]
+
+    by_model_out = {
+        mid: {
+            "label": data["label"],
+            "domains": sorted(data["domains"].values(), key=lambda x: x["count"], reverse=True)[:10],
+        }
+        for mid, data in by_model.items()
+    }
+
+    return {"aggregate": aggregate, "by_model": by_model_out}
+
+
 def highlight_excerpt(excerpt: str, companies: list[CompanyEntry]) -> Markup:
     """
     HTML-escape an excerpt, then wrap every company/alias occurrence in a
