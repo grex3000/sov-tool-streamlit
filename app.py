@@ -1072,27 +1072,18 @@ if stage == "config":
         </div>""", unsafe_allow_html=True)
 
         st.write("")
-        col_dl, col_csv, col_xlsx, col_new = st.columns(4)
+        col_dl, col_src, col_new = st.columns(3)
         with col_dl:
             st.download_button("Download Report", data=_ss.report_html,
                                file_name=report_name, mime="text/html",
                                use_container_width=True)
-        with col_csv:
+        with col_src:
             if _ss.source_citations:
                 st.download_button(
                     "Export Sources (CSV)",
                     data=_build_sources_csv(_ss.source_citations),
                     file_name=report_name.replace(".html", "-sources.csv"),
                     mime="text/csv",
-                    use_container_width=True,
-                )
-        with col_xlsx:
-            if _ss.source_citations:
-                st.download_button(
-                    "Export Sources (Excel)",
-                    data=_build_sources_excel(_ss.source_citations),
-                    file_name=report_name.replace(".html", "-sources.xlsx"),
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True,
                 )
         with col_new:
